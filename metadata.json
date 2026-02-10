@@ -1,0 +1,5 @@
+{
+  "name": "E-14 Real-time Auditor",
+  "description": "A real-time election auditing dashboard visualizing the flow from WhatsApp to Gemini Analysis and Fraud Detection.",
+  "requestFramePermissions": []
+}
