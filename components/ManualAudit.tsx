@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Camera, FileText, Check, AlertTriangle, Loader2 } from 'lucide-react';
+import { Upload, Camera, FileText, Check, AlertTriangle, Loader2, Microscope, Gavel, Scale } from 'lucide-react';
 import { analyzeElectionAct } from '../services/geminiService';
-import { AnalyzedAct } from '../types';
+import { AnalyzedAct, ForensicDetail } from '../types';
+import { POLITICAL_CONFIG } from '../constants';
 
 const ManualAudit: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -32,7 +33,6 @@ const ManualAudit: React.FC = () => {
         reader.readAsDataURL(file);
         reader.onloadend = async () => {
             const base64data = reader.result as string;
-            // Remove header "data:image/jpeg;base64,"
             const base64Content = base64data.split(',')[1];
             
             try {
@@ -112,11 +112,11 @@ const ManualAudit: React.FC = () => {
                 {loading ? (
                     <>
                         <Loader2 className="animate-spin" />
-                        <span>Analyzing with Gemini...</span>
+                        <span>Running Forensic Vision...</span>
                     </>
                 ) : (
                     <>
-                        <Camera size={20} />
+                        <Microscope size={20} />
                         <span>Run Audit</span>
                     </>
                 )}
@@ -134,7 +134,7 @@ const ManualAudit: React.FC = () => {
         {!result && !loading && !error && (
             <div className="h-64 flex flex-col items-center justify-center text-slate-600 space-y-2 border border-slate-800/50 rounded-lg bg-slate-950/50">
                 <p>No data extracted yet.</p>
-                <p className="text-xs">Upload an image to start the "Node New" process.</p>
+                <p className="text-xs">Upload an E-14 image to begin forensic analysis.</p>
             </div>
         )}
 
@@ -156,30 +156,81 @@ const ManualAudit: React.FC = () => {
 
         {result && (
             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                {/* Verdict Card */}
-                <div className={`p-4 rounded-lg border flex items-center justify-between ${
-                    result.is_fraud 
-                    ? 'bg-red-500/10 border-red-500/30' 
-                    : 'bg-green-500/10 border-green-500/30'
+                
+                {/* 1. Verdict Card with Strategic Recommendation */}
+                <div className={`p-5 rounded-lg border relative overflow-hidden ${
+                    result.strategic_analysis?.intent === 'PERJUICIO'
+                    ? 'bg-red-900/20 border-red-500/40' 
+                    : result.strategic_analysis?.intent === 'BENEFICIO'
+                    ? 'bg-emerald-900/20 border-emerald-500/40'
+                    : 'bg-slate-800/50 border-slate-700'
                 }`}>
-                    <div>
-                        <p className={`text-xs font-bold uppercase tracking-wider ${
-                            result.is_fraud ? 'text-red-400' : 'text-green-400'
-                        }`}>Verdict</p>
-                        <h2 className={`text-2xl font-bold ${
-                            result.is_fraud ? 'text-white' : 'text-white'
-                        }`}>
-                            {result.is_fraud ? 'POTENTIAL FRAUD DETECTED' : 'VALID ACT'}
+                   <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-xs font-bold uppercase tracking-widest opacity-70">
+                                Legal Strategy Engine
+                            </span>
+                            <Scale size={20} className={result.strategic_analysis?.intent === 'PERJUICIO' ? 'text-red-400' : 'text-emerald-400'} />
+                        </div>
+                        <h2 className="text-2xl font-black text-white mb-1">
+                            {result.strategic_analysis?.recommendation || "VALIDAR"}
                         </h2>
-                    </div>
-                    <div className={`p-3 rounded-full ${
-                        result.is_fraud ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                    }`}>
-                        {result.is_fraud ? <AlertTriangle size={24} /> : <Check size={24} />}
-                    </div>
+                        <p className="text-sm opacity-90 mb-3">
+                            {result.strategic_analysis?.legal_grounding || "No action required."}
+                        </p>
+                        
+                        <div className="flex items-center gap-2 mt-4">
+                            <span className="text-xs bg-black/30 px-2 py-1 rounded border border-white/10">
+                                Impact: {result.strategic_analysis?.intent}
+                            </span>
+                            <span className="text-xs bg-black/30 px-2 py-1 rounded border border-white/10">
+                                Client: {POLITICAL_CONFIG.CLIENT_NAME}
+                            </span>
+                        </div>
+                   </div>
                 </div>
 
-                {/* Metadata */}
+                {/* 2. Forensic Details (The "Vision" Part) */}
+                {result.forensic_analysis && result.forensic_analysis.length > 0 && (
+                    <div className="bg-slate-950 border border-slate-800 rounded-lg p-4">
+                        <h4 className="text-sm font-bold text-slate-400 uppercase mb-3 flex items-center">
+                            <Microscope className="mr-2 text-purple-400" size={16} />
+                            Forensic Evidence Found
+                        </h4>
+                        <div className="space-y-3">
+                            {result.forensic_analysis.map((f: ForensicDetail, idx: number) => (
+                                <div key={idx} className="bg-slate-900 p-3 rounded border border-slate-800 flex flex-col gap-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-xs font-mono text-purple-400 border border-purple-500/30 px-1 rounded bg-purple-500/10">
+                                            {f.type}
+                                        </span>
+                                        <span className="text-xs text-slate-500">{Math.round(f.confidence * 100)}% Confidence</span>
+                                    </div>
+                                    <p className="text-sm text-slate-300">{f.description}</p>
+                                    
+                                    {/* Reconstruction Pre/Post */}
+                                    <div className="flex items-center gap-3 text-sm mt-1 bg-black/20 p-2 rounded">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-slate-500 uppercase">Original (Inferred)</span>
+                                            <span className="font-mono text-slate-400 line-through">{f.original_value_inferred ?? '?'}</span>
+                                        </div>
+                                        <div className="text-slate-600">→</div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-slate-500 uppercase">Final (Legible)</span>
+                                            <span className="font-mono text-white font-bold">{f.final_value_legible}</span>
+                                        </div>
+                                        <div className="ml-auto text-xs text-right">
+                                            <span className="block text-slate-500">Affected Party</span>
+                                            <span className="text-slate-300">{f.affected_party}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* 3. Basic Metadata */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
                         <label className="text-xs text-slate-500 font-mono">MESA ID</label>
@@ -191,31 +242,7 @@ const ManualAudit: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Calculations */}
-                <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-3">
-                    <h4 className="text-sm font-bold text-slate-400 uppercase">Math Verification</h4>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Sum of extracted votes:</span>
-                        <span className="font-mono text-white">{result.total_calculated}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Total declared on form:</span>
-                        <span className="font-mono text-white">{result.total_declared}</span>
-                    </div>
-                    <div className="h-px bg-slate-800"></div>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Difference:</span>
-                        <span className={`font-mono font-bold ${
-                            (result.total_calculated! - result.total_declared!) !== 0 
-                            ? 'text-red-500' 
-                            : 'text-green-500'
-                        }`}>
-                            {result.total_calculated! - result.total_declared!}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Votes Table */}
+                {/* 4. Extracted Votes */}
                 <div>
                     <h4 className="text-sm font-bold text-slate-400 uppercase mb-3">Extracted Votes</h4>
                     <div className="border border-slate-800 rounded-lg overflow-hidden">

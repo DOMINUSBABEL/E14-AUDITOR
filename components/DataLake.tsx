@@ -20,7 +20,10 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
       total_declared: true,
       is_fraud: true,
       timestamp: true,
-      status: true
+      // New Forensic Columns
+      strategic_intent: true,
+      strategic_recommendation: true,
+      forensic_summary: true,
     }
   });
 
@@ -53,9 +56,30 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
     const headers = selectedColumns.join(',');
     const rows = dataToExport.map(act => {
       return selectedColumns.map(col => {
-        // @ts-ignore
-        const val = act[col];
-        return typeof val === 'string' ? `"${val}"` : val;
+        let val: any = '';
+        
+        // Handle standard fields
+        if (col in act) {
+            // @ts-ignore
+            val = act[col];
+        } 
+        // Handle Computed Forensic fields
+        else if (col === 'strategic_intent') {
+            val = act.strategic_analysis?.intent || 'N/A';
+        } 
+        else if (col === 'strategic_recommendation') {
+            val = act.strategic_analysis?.recommendation || 'N/A';
+        }
+        else if (col === 'forensic_summary') {
+            val = act.forensic_analysis.map(f => `${f.type} (${f.affected_party})`).join('; ') || 'None';
+        }
+
+        // CSV Sanitization
+        if (typeof val === 'string') {
+            // Escape quotes and wrap in quotes
+            val = `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
       }).join(',');
     });
 
@@ -111,8 +135,9 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                 <th className="px-6 py-4 border-b border-slate-800">Timestamp</th>
                 <th className="px-6 py-4 border-b border-slate-800">Mesa ID</th>
                 <th className="px-6 py-4 border-b border-slate-800">Zona</th>
-                <th className="px-6 py-4 border-b border-slate-800 text-center">Calculated</th>
-                <th className="px-6 py-4 border-b border-slate-800 text-center">Declared</th>
+                <th className="px-6 py-4 border-b border-slate-800 text-center">Intent</th>
+                <th className="px-6 py-4 border-b border-slate-800 text-center">Recommendation</th>
+                <th className="px-6 py-4 border-b border-slate-800 text-center">Forensic Details</th>
                 <th className="px-6 py-4 border-b border-slate-800 text-center">Status</th>
                 <th className="px-6 py-4 border-b border-slate-800">Actions</th>
               </tr>
@@ -123,15 +148,47 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                   <td className="px-6 py-4 font-mono text-xs">{act.timestamp}</td>
                   <td className="px-6 py-4 font-bold text-white">{act.mesa}</td>
                   <td className="px-6 py-4">{act.zona}</td>
-                  <td className="px-6 py-4 text-center font-mono text-white">{act.total_calculated}</td>
-                  <td className="px-6 py-4 text-center font-mono text-white">{act.total_declared}</td>
+                  
+                  {/* Intent Column */}
+                  <td className="px-6 py-4 text-center">
+                    {act.strategic_analysis?.intent && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                        act.strategic_analysis.intent === 'PERJUICIO' ? 'bg-red-500/20 text-red-400' :
+                        act.strategic_analysis.intent === 'BENEFICIO' ? 'bg-emerald-500/20 text-emerald-400' :
+                        'bg-slate-700/30 text-slate-500'
+                      }`}>
+                        {act.strategic_analysis.intent}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Recommendation Column */}
+                  <td className="px-6 py-4 text-center font-mono text-xs text-white">
+                     {act.strategic_analysis?.recommendation || '-'}
+                  </td>
+
+                   {/* Forensic Summary */}
+                  <td className="px-6 py-4 text-center text-xs">
+                     {act.forensic_analysis.length > 0 ? (
+                        <div className="flex flex-col gap-1 items-center">
+                            {act.forensic_analysis.map((f, i) => (
+                                <span key={i} className="text-slate-300 bg-slate-800 px-1 rounded border border-slate-700">
+                                    {f.type.slice(0,3)}: {f.original_value_inferred ?? '?'}→{f.final_value_legible}
+                                </span>
+                            ))}
+                        </div>
+                     ) : (
+                         <span className="text-slate-600">-</span>
+                     )}
+                  </td>
+
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${
                       act.is_fraud 
                       ? 'bg-red-500/10 text-red-500 border-red-500/20' 
                       : 'bg-green-500/10 text-green-500 border-green-500/20'
                     }`}>
-                      {act.is_fraud ? 'FRAUD SUSPECT' : 'VERIFIED'}
+                      {act.is_fraud ? 'FRAUD' : 'VERIFIED'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -141,7 +198,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
               ))}
               {filteredActs.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     <Database size={32} className="mx-auto mb-2 opacity-50" />
                     No records found matching your search.
                   </td>

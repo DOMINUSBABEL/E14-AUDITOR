@@ -5,7 +5,7 @@ import LiveMonitor from './components/LiveMonitor';
 import ManualAudit from './components/ManualAudit';
 import DataLake from './components/DataLake';
 import { SystemMetrics, SystemLog, AnalyzedAct } from './types';
-import { INITIAL_METRICS } from './constants';
+import { INITIAL_METRICS, POLITICAL_CONFIG } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,6 +19,9 @@ const App: React.FC = () => {
       const isFraud = Math.random() > 0.8;
       const date = new Date();
       date.setMinutes(date.getMinutes() - Math.floor(Math.random() * 10000));
+      
+      const intent: 'PERJUICIO' | 'BENEFICIO' | 'NEUTRO' = isFraud ? 'PERJUICIO' : 'NEUTRO';
+
       return {
         id: Math.random().toString(36).substr(2, 9),
         mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -27,6 +30,21 @@ const App: React.FC = () => {
         total_calculated: 100,
         total_declared: isFraud ? 120 : 100,
         is_fraud: isFraud,
+        is_legible: true,
+        forensic_analysis: isFraud ? [{
+          type: 'TACHON',
+          description: 'Detected erasure on cell 4',
+          affected_party: POLITICAL_CONFIG.CLIENT_NAME,
+          original_value_inferred: 50,
+          final_value_legible: 20,
+          confidence: 0.95
+        }] : [],
+        strategic_analysis: isFraud ? {
+          intent: 'PERJUICIO',
+          impact_score: -30,
+          recommendation: 'IMPUGNAR',
+          legal_grounding: 'Art 192. Modificación ilegal.'
+        } : undefined,
         timestamp: date.toLocaleTimeString(),
         isoTimestamp: date.toISOString(),
         status: 'completed'
@@ -51,9 +69,9 @@ const App: React.FC = () => {
       const logTypes: {source: SystemLog['source'], msg: string, type: SystemLog['type']}[] = [
         { source: 'ClawdBot', msg: 'Recibido IMG-20231029-WA00.jpg', type: 'info' },
         { source: 'Redis', msg: 'Enqueued task: 3ae2-11f2', type: 'info' },
-        { source: 'GeminiWorker', msg: 'Processing batch #4421', type: 'info' },
-        { source: 'GeminiWorker', msg: 'Extraction Complete: Mesa 102', type: 'success' },
-        { source: 'PocketBase', msg: 'Record created id: 8821a', type: 'success' },
+        { source: 'GeminiWorker', msg: 'Vision Analysis: No Tachones found', type: 'info' },
+        { source: 'LegalEngine', msg: 'Strategic Analysis: No Action Required', type: 'success' },
+        { source: 'PocketBase', msg: 'Record synced', type: 'success' },
       ];
 
       if (Math.random() > 0.6) {
@@ -80,6 +98,21 @@ const App: React.FC = () => {
           total_calculated: 100,
           total_declared: isFraud ? 120 : 100,
           is_fraud: isFraud,
+          is_legible: true,
+          forensic_analysis: isFraud ? [{
+             type: 'ENMENDADURA',
+             description: 'Value changed from 10 to 80',
+             affected_party: 'Centro Democrático',
+             original_value_inferred: 10,
+             final_value_legible: 80,
+             confidence: 0.88
+          }] : [],
+          strategic_analysis: isFraud ? {
+             intent: 'PERJUICIO', // Rival gained votes
+             impact_score: -70,
+             recommendation: 'IMPUGNAR',
+             legal_grounding: 'Fraude aritmético evidente.'
+          } : undefined,
           timestamp: now.toLocaleTimeString(),
           isoTimestamp: now.toISOString(),
           status: 'completed'
@@ -109,7 +142,7 @@ const App: React.FC = () => {
             <p className="text-slate-400 text-sm mt-1">
               {activeTab === 'dashboard' && 'Real-time monitoring of E-14 ingestion process.'}
               {activeTab === 'live' && 'Visualizing ClawdBot -> Redis -> Ryzen -> PocketBase pipeline.'}
-              {activeTab === 'audit' && 'Upload specific acts for deep-dive analysis using Gemini 1.5.'}
+              {activeTab === 'audit' && 'Upload specific acts for deep-dive forensic analysis.'}
               {activeTab === 'data' && 'Historical records, export tools, and long-term storage view.'}
             </p>
           </div>
