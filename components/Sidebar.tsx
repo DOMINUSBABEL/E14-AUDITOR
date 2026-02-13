@@ -7,7 +7,7 @@ interface SidebarProps {
   setActiveTab: (id: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+export const SidebarComponent: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full fixed left-0 top-0 z-10">
       <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
@@ -69,4 +69,4 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   );
 };
 
-export default Sidebar;
+export default React.memo(SidebarComponent);
