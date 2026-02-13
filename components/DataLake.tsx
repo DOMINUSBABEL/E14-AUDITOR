@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnalyzedAct } from '../types';
 import { Download, Search, Calendar, Filter, Database, FileSpreadsheet, X } from 'lucide-react';
+import { generateCSVChunks } from './DataLake.utils';
 
 interface DataLakeProps {
   acts: AnalyzedAct[];
@@ -53,46 +54,20 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
       .map(([key]) => key);
 
     // 3. Generate CSV
-    const headers = selectedColumns.join(',');
-    const rows = dataToExport.map(act => {
-      return selectedColumns.map(col => {
-        let val: any = '';
-        
-        // Handle standard fields
-        if (col in act) {
-            // @ts-ignore
-            val = act[col];
-        } 
-        // Handle Computed Forensic fields
-        else if (col === 'strategic_intent') {
-            val = act.strategic_analysis?.intent || 'N/A';
-        } 
-        else if (col === 'strategic_recommendation') {
-            val = act.strategic_analysis?.recommendation || 'N/A';
-        }
-        else if (col === 'forensic_summary') {
-            val = act.forensic_analysis.map(f => `${f.type} (${f.affected_party})`).join('; ') || 'None';
-        }
-
-        // CSV Sanitization
-        if (typeof val === 'string') {
-            // Escape quotes and wrap in quotes
-            val = `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      }).join(',');
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const chunks = generateCSVChunks(dataToExport, selectedColumns);
+    const blob = new Blob(chunks, { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     
     // 4. Download
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `auditor_export_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     
     setShowExportModal(false);
   };
