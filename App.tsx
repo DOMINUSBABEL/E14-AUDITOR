@@ -5,7 +5,7 @@ import LiveMonitor from './components/LiveMonitor';
 import ManualAudit from './components/ManualAudit';
 import DataLake from './components/DataLake';
 import { SystemMetrics, SystemLog, AnalyzedAct } from './types';
-import { INITIAL_METRICS, POLITICAL_CONFIG } from './constants';
+import { INITIAL_METRICS, POLITICAL_CONFIG, MOCK_PARTIES } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -26,7 +26,10 @@ const App: React.FC = () => {
         id: Math.random().toString(36).substr(2, 9),
         mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
         zona: `ZONA-${Math.floor(1 + Math.random() * 20).toString().padStart(2, '0')}`,
-        votes: [],
+        votes: MOCK_PARTIES.map(party => ({
+          party,
+          count: Math.floor(Math.random() * 200) // Random vote distribution
+        })),
         total_calculated: 100,
         total_declared: isFraud ? 120 : 100,
         is_fraud: isFraud,
@@ -94,7 +97,10 @@ const App: React.FC = () => {
           id: Math.random().toString(36).substr(2, 9),
           mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
           zona: `ZONA-${Math.floor(1 + Math.random() * 20).toString().padStart(2, '0')}`,
-          votes: [],
+          votes: MOCK_PARTIES.map(party => ({
+            party,
+            count: Math.floor(Math.random() * 200) // Random vote distribution
+          })),
           total_calculated: 100,
           total_declared: isFraud ? 120 : 100,
           is_fraud: isFraud,
