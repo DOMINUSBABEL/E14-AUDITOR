@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalyzedAct, ForensicDetail, StrategicAnalysis } from "../types";
+import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
 
 // Initialize Gemini Client
@@ -106,7 +106,7 @@ export const analyzeElectionAct = async (
 };
 
 // Internal Logic: Determine if alteration helps or hurts the Client
-function runBusinessLogic(forensics: ForensicDetail[] = [], votes: any[]): StrategicAnalysis {
+export function runBusinessLogic(forensics: ForensicDetail[] = [], votes: VoteCount[]): StrategicAnalysis {
   const client = POLITICAL_CONFIG.CLIENT_NAME;
   
   if (!forensics || forensics.length === 0) {
