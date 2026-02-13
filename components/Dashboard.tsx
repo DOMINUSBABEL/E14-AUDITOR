@@ -224,7 +224,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-3 text-sm text-slate-300 cursor-pointer">
                     <input type="checkbox" checked={alerts.triggers.highLoad} onChange={e => setAlerts({...alerts, triggers: {...alerts.triggers, highLoad: e.target.checked}})} className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" />
-                    <span>High Queue Load (>50k)</span>
+                    <span>High Queue Load (&gt;50k)</span>
                   </label>
                   <label className="flex items-center space-x-3 text-sm text-slate-300 cursor-pointer">
                     <input type="checkbox" checked={alerts.triggers.fraud} onChange={e => setAlerts({...alerts, triggers: {...alerts.triggers, fraud: e.target.checked}})} className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" />
