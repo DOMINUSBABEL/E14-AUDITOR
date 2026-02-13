@@ -20,8 +20,6 @@ const App: React.FC = () => {
       const date = new Date();
       date.setMinutes(date.getMinutes() - Math.floor(Math.random() * 10000));
       
-      const intent: 'PERJUICIO' | 'BENEFICIO' | 'NEUTRO' = isFraud ? 'PERJUICIO' : 'NEUTRO';
-
       return {
         id: Math.random().toString(36).substr(2, 9),
         mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
