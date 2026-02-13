@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SystemMetrics, AnalyzedAct } from '../types';
 import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare } from 'lucide-react';
@@ -36,6 +36,8 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
     { name: 'P. Alt.', votes: 1800 },
     { name: 'Blanco', votes: 500 },
   ];
+
+  const fraudActs = useMemo(() => acts.filter(a => a.is_fraud), [acts]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
@@ -150,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {acts.filter(a => a.is_fraud).slice(0, 5).map((act) => (
+              {fraudActs.slice(0, 5).map((act) => (
                 <tr key={act.id} className="hover:bg-slate-800/50">
                   <td className="px-6 py-4 font-mono">{act.timestamp}</td>
                   <td className="px-6 py-4 text-white font-medium">{act.mesa}</td>
@@ -168,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
                   </td>
                 </tr>
               ))}
-              {acts.filter(a => a.is_fraud).length === 0 && (
+              {fraudActs.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
                     No fraud alerts detected in current batch.
@@ -224,7 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-3 text-sm text-slate-300 cursor-pointer">
                     <input type="checkbox" checked={alerts.triggers.highLoad} onChange={e => setAlerts({...alerts, triggers: {...alerts.triggers, highLoad: e.target.checked}})} className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" />
-                    <span>High Queue Load (>50k)</span>
+                    <span>High Queue Load (&gt;50k)</span>
                   </label>
                   <label className="flex items-center space-x-3 text-sm text-slate-300 cursor-pointer">
                     <input type="checkbox" checked={alerts.triggers.fraud} onChange={e => setAlerts({...alerts, triggers: {...alerts.triggers, fraud: e.target.checked}})} className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" />
