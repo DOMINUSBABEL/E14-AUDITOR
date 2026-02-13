@@ -3,7 +3,7 @@ import { AnalyzedAct, ForensicDetail, StrategicAnalysis } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
 
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
 
@@ -12,6 +12,7 @@ export const analyzeElectionAct = async (
   mimeType: string
 ): Promise<Partial<AnalyzedAct>> => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'dummy_key' });
     const prompt = `
       Actúa como un Auditor Forense Electoral Experto (Nivel CNE Colombia). Analiza esta imagen del formulario E-14.
       
