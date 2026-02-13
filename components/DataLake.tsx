@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AnalyzedAct } from '../types';
 import { Download, Search, Calendar, Filter, Database, FileSpreadsheet, X } from 'lucide-react';
 
@@ -27,11 +27,11 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
     }
   });
 
-  const filteredActs = acts.filter(act => 
+  const filteredActs = useMemo(() => acts.filter(act =>
     act.mesa.toLowerCase().includes(searchTerm.toLowerCase()) || 
     act.zona.toLowerCase().includes(searchTerm.toLowerCase()) ||
     act.id.includes(searchTerm)
-  );
+  ), [acts, searchTerm]);
 
   const handleExport = () => {
     // 1. Filter Data by Date
