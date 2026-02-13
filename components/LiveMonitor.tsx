@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { SystemLog } from '../types';
 import { Database, Server, Cpu, MessageSquare, ArrowRight, FilterX } from 'lucide-react';
 
@@ -16,9 +16,9 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({ logs }) => {
     }
   }, [logs, selectedSource]);
 
-  const filteredLogs = selectedSource 
+  const filteredLogs = useMemo(() => selectedSource
     ? logs.filter(log => log.source === selectedSource)
-    : logs;
+    : logs, [logs, selectedSource]);
 
   return (
     <div className="space-y-6 h-[calc(100vh-140px)] flex flex-col">
