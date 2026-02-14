@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { SystemLog } from '../types';
-import { Database, Server, Cpu, MessageSquare, ArrowRight, FilterX } from 'lucide-react';
+import { Database, Server, Cpu, MessageSquare, ArrowRight, FilterX, LucideIcon } from 'lucide-react';
 
 interface LiveMonitorProps {
   logs: SystemLog[];
@@ -130,7 +130,18 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({ logs }) => {
   );
 };
 
-const NodeCard = ({ icon: Icon, title, status, color, detail, sourceFilter, selectedSource, onClick }: any) => {
+interface NodeCardProps {
+  icon: LucideIcon;
+  title: string;
+  status: string;
+  color: string;
+  detail: string;
+  sourceFilter: string;
+  selectedSource: string | null;
+  onClick: (source: string | null) => void;
+}
+
+const NodeCard: React.FC<NodeCardProps> = ({ icon: Icon, title, status, color, detail, sourceFilter, selectedSource, onClick }) => {
   const isSelected = selectedSource === sourceFilter;
   const isInactive = selectedSource && !isSelected;
 
