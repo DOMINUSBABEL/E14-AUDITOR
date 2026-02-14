@@ -7,7 +7,7 @@ interface DataLakeProps {
   acts: AnalyzedAct[];
 }
 
-const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
+export const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportConfig, setExportConfig] = useState({
@@ -279,4 +279,4 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   );
 };
 
-export default DataLake;
+export default React.memo(DataLake);
