@@ -20,11 +20,11 @@ export const POLITICAL_CONFIG = {
 
 // Mock Database of Lawyers per Party (Tenant System)
 export const LAWYERS_DB: Record<string, { name: string; phone: string }> = {
-  "Pacto Histórico": { name: "Dr. Gustavo Bolívar", phone: "+57 300 111 2233" },
-  "Centro Democrático": { name: "Dra. Paloma V.", phone: "+57 310 444 5566" },
-  "Partido Liberal": { name: "Dr. César G.", phone: "+57 320 777 8899" },
-  "Partido Verde": { name: "Dra. Angélica L.", phone: "+57 300 999 0000" },
-  "Cambio Radical": { name: "Dr. Germán V.", phone: "+57 315 123 4567" },
+  "Pacto Histórico": { name: "Representative Pacto Histórico", phone: "+57 300 000 0000" },
+  "Centro Democrático": { name: "Representative Centro Democrático", phone: "+57 300 000 0000" },
+  "Partido Liberal": { name: "Representative Partido Liberal", phone: "+57 300 000 0000" },
+  "Partido Verde": { name: "Representative Partido Verde", phone: "+57 300 000 0000" },
+  "Cambio Radical": { name: "Representative Cambio Radical", phone: "+57 300 000 0000" },
   "Default": { name: "Equipo Jurídico General", phone: "+57 300 000 0000" }
 };
 
