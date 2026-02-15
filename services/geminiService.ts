@@ -7,11 +7,29 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
 
+// Security Constants
+const MAX_IMAGE_SIZE_MB = 10;
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 export const analyzeElectionAct = async (
   base64Image: string, 
   mimeType: string
 ): Promise<Partial<AnalyzedAct>> => {
   try {
+    // 1. Input Validation: MIME Type
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+      throw new Error(`Invalid image format: ${mimeType}. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`);
+    }
+
+    // 2. Input Validation: Size (Approximate from Base64 length)
+    // Base64 is ~1.33x larger than binary. (4 chars per 3 bytes)
+    const sizeInBytes = (base64Image.length * 3) / 4;
+    const sizeInMB = sizeInBytes / (1024 * 1024);
+
+    if (sizeInMB > MAX_IMAGE_SIZE_MB) {
+        throw new Error(`Image too large (${sizeInMB.toFixed(2)}MB). Max allowed: ${MAX_IMAGE_SIZE_MB}MB`);
+    }
+
     const prompt = `
       Actúa como un Auditor Forense Electoral Experto (Nivel CNE Colombia). Analiza esta imagen del formulario E-14.
       
