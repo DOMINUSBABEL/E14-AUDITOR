@@ -21,10 +21,6 @@ mock.module('./components/Dashboard', () => {
   return { default: () => <div data-testid="dashboard">Dashboard Component</div> };
 });
 
-mock.module('./components/LiveMonitor', () => {
-  return { default: () => <div data-testid="live-monitor">LiveMonitor Component</div> };
-});
-
 mock.module('./components/ManualAudit', () => {
   return { default: () => <div data-testid="manual-audit">ManualAudit Component</div> };
 });
