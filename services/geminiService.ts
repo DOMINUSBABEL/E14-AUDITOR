@@ -1,88 +1,27 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
-
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
 
 export const analyzeElectionAct = async (
   base64Image: string, 
   mimeType: string
 ): Promise<Partial<AnalyzedAct>> => {
   try {
-    const prompt = `
-      Actúa como un Auditor Forense Electoral Experto (Nivel CNE Colombia). Analiza esta imagen del formulario E-14.
-      
-      TU MISIÓN:
-      1. OCR Básico: Extrae Mesa, Zona y Votos por partido.
-      2. ANÁLISIS FORENSE VISUAL (CRÍTICO):
-         - Busca "Tachones" (zonas oscurecidas/reescritas).
-         - Busca "Enmendaduras" (números convertidos, ej: un 3 vuelto un 8).
-         - Busca diferencias de tinta o caligrafía.
-      3. TRAZABILIDAD (Pre/Post):
-         - Si hay una alteración, intenta inferir el número ORIGINAL (antes) y el FINAL (después).
-      
-      Retorna un objeto JSON con la estructura exacta definida.
-    `;
-
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Image
-            }
-          },
-          { text: prompt }
-        ]
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            mesa: { type: Type.STRING },
-            zona: { type: Type.STRING },
-            votes: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  party: { type: Type.STRING },
-                  count: { type: Type.INTEGER }
-                }
-              }
-            },
-            total_calculated: { type: Type.INTEGER },
-            total_declared: { type: Type.INTEGER },
-            is_fraud: { type: Type.BOOLEAN },
-            forensic_analysis: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING, enum: ["TACHON", "ENMENDADURA", "CALIGRAFIA", "NONE"] },
-                  description: { type: Type.STRING },
-                  affected_party: { type: Type.STRING },
-                  original_value_inferred: { type: Type.INTEGER, nullable: true },
-                  final_value_legible: { type: Type.INTEGER },
-                  confidence: { type: Type.NUMBER }
-                }
-              }
-            }
-          }
-        }
-      }
+      body: JSON.stringify({
+        image: base64Image,
+        mimeType: mimeType
+      })
     });
 
-    const text = response.text;
-    if (!text) throw new Error("No response from Gemini");
+    if (!response.ok) {
+        throw new Error(`Server error: ${response.statusText}`);
+    }
 
-    const data = JSON.parse(text);
+    const data = await response.json();
 
     // --- BUSINESS LOGIC ENGINE (CLIENT SIDE) ---
     // Classify Intent and Generate Recommendation locally to ensure client-specific logic control
