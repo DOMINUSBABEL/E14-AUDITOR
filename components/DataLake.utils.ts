@@ -52,6 +52,11 @@ export function generateCSVChunks(dataToExport: AnalyzedAct[], columns: string[]
       let val = columnHandlers[j](act);
 
       if (typeof val === 'string') {
+        // Prevent CSV Injection
+        if (/^[=+\-@]/.test(val)) {
+          val = `'${val}`;
+        }
+
         // Escape quotes and wrap in quotes if it's a string
         // Note: This matches original logic which always quotes strings.
         // Optimization: only quote if necessary? For now, stick to original logic for compatibility.

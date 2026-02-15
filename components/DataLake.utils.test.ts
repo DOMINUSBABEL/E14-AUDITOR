@@ -133,4 +133,24 @@ describe("generateCSVChunks", () => {
 
       expect(chunks[2]).toBe('"act-1","",""');
   });
+
+  test("should prevent CSV injection", () => {
+    const maliciousAct = {
+      ...mockActs[0],
+      id: "=cmd|/C calc!A0",
+      mesa: "+1+1",
+      zona: "-1-1",
+      timestamp: "@SUM(1+1)",
+    };
+
+    const columns = ["id", "mesa", "zona", "timestamp"];
+    const chunks = generateCSVChunks([maliciousAct], columns);
+    const csvRow = chunks[2]; // Index 0: header, 1: newline, 2: row
+
+    // Expected: "'=cmd|/C calc!A0","'+1+1","'-1-1","'@SUM(1+1)"
+    expect(csvRow).toContain(`"'=cmd|/C calc!A0"`);
+    expect(csvRow).toContain(`"'+1+1"`);
+    expect(csvRow).toContain(`"'-1-1"`);
+    expect(csvRow).toContain(`"'@SUM(1+1)"`);
+  });
 });
