@@ -23,7 +23,7 @@ const App: React.FC = () => {
       const intent: 'PERJUICIO' | 'BENEFICIO' | 'NEUTRO' = isFraud ? 'PERJUICIO' : 'NEUTRO';
 
       return {
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
         zona: `ZONA-${Math.floor(1 + Math.random() * 20).toString().padStart(2, '0')}`,
         votes: [],
@@ -77,7 +77,7 @@ const App: React.FC = () => {
       if (Math.random() > 0.6) {
         const randomLog = logTypes[Math.floor(Math.random() * logTypes.length)];
         const newLog: SystemLog = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: crypto.randomUUID(),
           timestamp: new Date().toLocaleTimeString(),
           message: randomLog.msg,
           type: randomLog.type,
@@ -91,7 +91,7 @@ const App: React.FC = () => {
         const isFraud = Math.random() > 0.9;
         const now = new Date();
         const newAct: AnalyzedAct = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: crypto.randomUUID(),
           mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
           zona: `ZONA-${Math.floor(1 + Math.random() * 20).toString().padStart(2, '0')}`,
           votes: [],
