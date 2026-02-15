@@ -7,10 +7,16 @@ interface DataLakeProps {
   acts: AnalyzedAct[];
 }
 
+interface ExportConfig {
+  startDate: string;
+  endDate: string;
+  columns: Record<string, boolean>;
+}
+
 const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportConfig, setExportConfig] = useState({
+  const [exportConfig, setExportConfig] = useState<ExportConfig>({
     startDate: '',
     endDate: '',
     columns: {
@@ -237,9 +243,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                     <label key={col} className="flex items-center space-x-3 p-3 bg-slate-950 rounded border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input 
                         type="checkbox" 
-                        // @ts-ignore
                         checked={exportConfig.columns[col]} 
-                        // @ts-ignore
                         onChange={e => setExportConfig({...exportConfig, columns: {...exportConfig.columns, [col]: e.target.checked}})}
                         className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" 
                       />
