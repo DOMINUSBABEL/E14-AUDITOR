@@ -233,13 +233,11 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                   <Filter className="mr-2" size={16} /> Select Columns
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {Object.keys(exportConfig.columns).map((col) => (
+                  {(Object.keys(exportConfig.columns) as Array<keyof typeof exportConfig.columns>).map((col) => (
                     <label key={col} className="flex items-center space-x-3 p-3 bg-slate-950 rounded border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input 
                         type="checkbox" 
-                        // @ts-ignore
                         checked={exportConfig.columns[col]} 
-                        // @ts-ignore
                         onChange={e => setExportConfig({...exportConfig, columns: {...exportConfig.columns, [col]: e.target.checked}})}
                         className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" 
                       />
