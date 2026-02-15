@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { AnalyzedAct } from '../types';
-import { Download, Search, Calendar, Filter, Database, FileSpreadsheet, X } from 'lucide-react';
-import { generateCSVChunks } from './DataLake.utils';
+import { Download, Search, Database } from 'lucide-react';
+import { useDataLakeExport } from './useDataLakeExport';
+import DataLakeExportModal from './DataLakeExportModal';
 
 interface DataLakeProps {
   acts: AnalyzedAct[];
@@ -9,68 +10,20 @@ interface DataLakeProps {
 
 const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportConfig, setExportConfig] = useState({
-    startDate: '',
-    endDate: '',
-    columns: {
-      id: true,
-      mesa: true,
-      zona: true,
-      total_calculated: true,
-      total_declared: true,
-      is_fraud: true,
-      timestamp: true,
-      // New Forensic Columns
-      strategic_intent: true,
-      strategic_recommendation: true,
-      forensic_summary: true,
-    }
-  });
+
+  const {
+    showExportModal,
+    setShowExportModal,
+    exportConfig,
+    setExportConfig,
+    handleExport,
+  } = useDataLakeExport(acts);
 
   const filteredActs = useMemo(() => acts.filter(act =>
     act.mesa.toLowerCase().includes(searchTerm.toLowerCase()) || 
     act.zona.toLowerCase().includes(searchTerm.toLowerCase()) ||
     act.id.includes(searchTerm)
   ), [acts, searchTerm]);
-
-  const handleExport = () => {
-    // 1. Filter Data by Date
-    let dataToExport = acts;
-    if (exportConfig.startDate || exportConfig.endDate) {
-      dataToExport = dataToExport.filter(act => {
-        const actDate = new Date(act.isoTimestamp);
-        const start = exportConfig.startDate ? new Date(exportConfig.startDate) : new Date('2000-01-01');
-        const end = exportConfig.endDate ? new Date(exportConfig.endDate) : new Date();
-        // Adjust end date to include the full day
-        end.setHours(23, 59, 59, 999);
-        return actDate >= start && actDate <= end;
-      });
-    }
-
-    // 2. Filter Columns
-    const selectedColumns = Object.entries(exportConfig.columns)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([key]) => key);
-
-    // 3. Generate CSV
-    const chunks = generateCSVChunks(dataToExport, selectedColumns);
-    const blob = new Blob(chunks, { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    // 4. Download
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `auditor_export_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-    
-    setShowExportModal(false);
-  };
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -184,97 +137,13 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
         </div>
       </div>
 
-      {/* Export Modal */}
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]">
-            
-            <div className="flex justify-between items-center p-6 border-b border-slate-800 shrink-0">
-              <h3 className="text-xl font-bold text-white flex items-center">
-                <FileSpreadsheet className="mr-3 text-green-500" size={24} />
-                Export Data Lake
-              </h3>
-              <button onClick={() => setShowExportModal(false)} className="text-slate-400 hover:text-white">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-8 overflow-y-auto">
-              {/* Date Range Section */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
-                  <Calendar className="mr-2" size={16} /> Date Range
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Start Date</label>
-                    <input 
-                      type="date" 
-                      value={exportConfig.startDate}
-                      onChange={e => setExportConfig({...exportConfig, startDate: e.target.value})}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-500 color-scheme-dark"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">End Date</label>
-                    <input 
-                      type="date" 
-                      value={exportConfig.endDate}
-                      onChange={e => setExportConfig({...exportConfig, endDate: e.target.value})}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary-500 color-scheme-dark"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Column Selection Section */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
-                  <Filter className="mr-2" size={16} /> Select Columns
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {Object.keys(exportConfig.columns).map((col) => (
-                    <label key={col} className="flex items-center space-x-3 p-3 bg-slate-950 rounded border border-slate-800 cursor-pointer hover:border-slate-700">
-                      <input 
-                        type="checkbox" 
-                        // @ts-ignore
-                        checked={exportConfig.columns[col]} 
-                        // @ts-ignore
-                        onChange={e => setExportConfig({...exportConfig, columns: {...exportConfig.columns, [col]: e.target.checked}})}
-                        className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" 
-                      />
-                      <span className="text-sm text-slate-300 capitalize">{col.replace('_', ' ')}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-4">
-                <p className="text-sm text-blue-400">
-                  <span className="font-bold">Note:</span> Exporting large datasets (over 10,000 rows) may take a few moments. The file will download as a CSV automatically.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-slate-800 flex justify-end gap-3 shrink-0 bg-slate-900 rounded-b-xl">
-              <button 
-                onClick={() => setShowExportModal(false)}
-                className="px-6 py-2 rounded-lg text-slate-400 hover:text-white font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleExport}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold transition-colors flex items-center shadow-lg shadow-green-900/20"
-              >
-                <Download size={18} className="mr-2" />
-                Download CSV
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <DataLakeExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleExport}
+        config={exportConfig}
+        setConfig={setExportConfig}
+      />
     </div>
   );
 };
