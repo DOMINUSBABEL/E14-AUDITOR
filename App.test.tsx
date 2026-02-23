@@ -17,10 +17,6 @@ mock.module('./components/Sidebar', () => {
   };
 });
 
-mock.module('./components/Dashboard', () => {
-  return { default: () => <div data-testid="dashboard">Dashboard Component</div> };
-});
-
 mock.module('./components/LiveMonitor', () => {
   return { default: () => <div data-testid="live-monitor">LiveMonitor Component</div> };
 });

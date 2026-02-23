@@ -38,7 +38,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 relative">
+    <div data-testid="dashboard" className="space-y-6 animate-in fade-in duration-500 relative">
       {/* Header Actions */}
       <div className="absolute top-[-3.5rem] right-20 hidden md:block">
         <button 
