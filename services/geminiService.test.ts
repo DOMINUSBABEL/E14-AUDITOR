@@ -37,27 +37,13 @@ describe("geminiService", () => {
   });
 
   describe("runBusinessLogic", () => {
-    it("should handle empty forensics and votes", () => {
-      const result = runBusinessLogic([], []);
+    it("should handle empty forensics", () => {
+      const result = runBusinessLogic([]);
       expect(result).toEqual({
         intent: 'NEUTRO',
         impact_score: 0,
         recommendation: 'VALIDAR'
       });
-    });
-
-    it("should accept valid VoteCount array", () => {
-        const votes: VoteCount[] = [
-            { party: "Party A", count: 100 },
-            { party: "Party B", count: 50 }
-        ];
-        // We are passing votes to ensure the type check passes
-        const result = runBusinessLogic([], votes);
-        expect(result).toEqual({
-            intent: 'NEUTRO',
-            impact_score: 0,
-            recommendation: 'VALIDAR'
-        });
     });
 
     describe("PERJUICIO scenarios", () => {
@@ -70,7 +56,7 @@ describe("geminiService", () => {
                 final_value_legible: 40, // -10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics);
             expect(result).toEqual({
                 intent: 'PERJUICIO',
                 impact_score: -10,
@@ -89,7 +75,7 @@ describe("geminiService", () => {
                 final_value_legible: 20, // +10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics);
             expect(result).toEqual({
                 intent: 'PERJUICIO',
                 impact_score: -10,
@@ -110,7 +96,7 @@ describe("geminiService", () => {
                 final_value_legible: 50, // +10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics);
             expect(result).toEqual({
                 intent: 'BENEFICIO',
                 impact_score: 10,
@@ -130,7 +116,7 @@ describe("geminiService", () => {
                 final_value_legible: 10, // -10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics);
             expect(result).toEqual({
                 intent: 'BENEFICIO',
                 impact_score: 10,
@@ -149,7 +135,7 @@ describe("geminiService", () => {
                 final_value_legible: 50, // +10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics);
             expect(result).toEqual({
                 intent: 'BENEFICIO',
                 impact_score: 10,
@@ -183,7 +169,7 @@ describe("geminiService", () => {
                 }
             ];
 
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics);
             expect(result).toEqual({
                 intent: 'PERJUICIO',
                 impact_score: -90, // +10 - 100 = -90

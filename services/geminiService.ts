@@ -86,7 +86,7 @@ export const analyzeElectionAct = async (
 
     // --- BUSINESS LOGIC ENGINE (CLIENT SIDE) ---
     // Classify Intent and Generate Recommendation locally to ensure client-specific logic control
-    const strategicAnalysis = runBusinessLogic(data.forensic_analysis, data.votes);
+    const strategicAnalysis = runBusinessLogic(data.forensic_analysis);
 
     return {
       mesa: data.mesa || "UNKNOWN",
@@ -106,7 +106,7 @@ export const analyzeElectionAct = async (
 };
 
 // Internal Logic: Determine if alteration helps or hurts the Client
-export function runBusinessLogic(forensics: ForensicDetail[] = [], votes: VoteCount[]): StrategicAnalysis {
+export function runBusinessLogic(forensics: ForensicDetail[] = []): StrategicAnalysis {
   const client = POLITICAL_CONFIG.CLIENT_NAME;
   
   if (!forensics || forensics.length === 0) {
