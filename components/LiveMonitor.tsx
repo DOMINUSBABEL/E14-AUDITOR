@@ -130,7 +130,7 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({ logs }) => {
   );
 };
 
-const NodeCard = ({ icon: Icon, title, status, color, detail, sourceFilter, selectedSource, onClick }: any) => {
+export const _NodeCard = ({ icon: Icon, title, status, color, detail, sourceFilter, selectedSource, onClick }: any) => {
   const isSelected = selectedSource === sourceFilter;
   const isInactive = selectedSource && !isSelected;
 
@@ -157,5 +157,7 @@ const NodeCard = ({ icon: Icon, title, status, color, detail, sourceFilter, sele
     </button>
   );
 };
+
+export const NodeCard = React.memo(_NodeCard);
 
 export default LiveMonitor;
