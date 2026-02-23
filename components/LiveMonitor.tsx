@@ -21,7 +21,7 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({ logs }) => {
     : logs, [logs, selectedSource]);
 
   return (
-    <div className="space-y-6 h-[calc(100vh-140px)] flex flex-col">
+    <div className="space-y-6 h-[calc(100vh-140px)] flex flex-col" data-testid="live-monitor">
       {/* Architecture Diagram Visualization */}
       <div className="grid grid-cols-4 gap-4 mb-4">
         <NodeCard 
