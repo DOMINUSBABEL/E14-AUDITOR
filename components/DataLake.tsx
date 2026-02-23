@@ -28,11 +28,14 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
     }
   });
 
-  const filteredActs = useMemo(() => acts.filter(act =>
-    act.mesa.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    act.zona.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    act.id.includes(searchTerm)
-  ), [acts, searchTerm]);
+  const filteredActs = useMemo(() => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return acts.filter(act =>
+      act.mesa.toLowerCase().includes(lowerSearchTerm) ||
+      act.zona.toLowerCase().includes(lowerSearchTerm) ||
+      act.id.includes(searchTerm)
+    );
+  }, [acts, searchTerm]);
 
   const handleExport = () => {
     // 1. Filter Data by Date
