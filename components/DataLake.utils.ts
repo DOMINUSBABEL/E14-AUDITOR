@@ -22,8 +22,8 @@ export function generateCSVChunks(dataToExport: AnalyzedAct[], columns: string[]
       return (act: AnalyzedAct) => act.forensic_analysis.map(f => `${f.type} (${f.affected_party})`).join('; ') || 'None';
     }
     return (act: AnalyzedAct) => {
-      // @ts-ignore - Dynamic property access is intended for generic export
-      const val = act[col];
+      // Dynamic property access is intended for generic export
+      const val = act[col as keyof AnalyzedAct];
       return val === undefined || val === null ? '' : val;
     };
   });

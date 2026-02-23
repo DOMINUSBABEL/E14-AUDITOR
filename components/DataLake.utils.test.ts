@@ -133,4 +133,13 @@ describe("generateCSVChunks", () => {
 
       expect(chunks[2]).toBe('"act-1","",""');
   });
+
+  test("should return empty string for non-existent column", () => {
+    const columns = ["id", "non_existent_column"];
+    const chunks = generateCSVChunks(mockActs, columns);
+
+    // non_existent_column should result in undefined access, which returns ''
+    // '' is quoted as ""
+    expect(chunks[2]).toBe('"act-1",""');
+  });
 });
