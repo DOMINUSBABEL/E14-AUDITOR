@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Camera, FileText, Check, AlertTriangle, Loader2, Microscope, Gavel, Scale } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Loader2, Microscope, Scale } from 'lucide-react';
 import { analyzeElectionAct } from '../services/geminiService';
 import { AnalyzedAct, ForensicDetail } from '../types';
 import { POLITICAL_CONFIG } from '../constants';
