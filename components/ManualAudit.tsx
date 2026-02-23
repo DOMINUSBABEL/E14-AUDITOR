@@ -51,7 +51,7 @@ const ManualAudit: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full" data-testid="manual-audit">
       {/* Left Column: Upload */}
       <div className="space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center min-h-[400px] border-dashed relative">
