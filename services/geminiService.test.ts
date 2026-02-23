@@ -100,7 +100,8 @@ describe("geminiService", () => {
     });
 
     describe("BENEFICIO scenarios", () => {
-        it("should detect BENEFICIO (SILENT_LOG) when client votes are added and STRICT_ETHICS is false", () => {
+        it("should detect BENEFICIO (RECONTEO) when client votes are added, regardless of STRICT_ETHICS", () => {
+            // STRICT_ETHICS logic was removed, so this should return RECONTEO
             (POLITICAL_CONFIG as any).STRICT_ETHICS = false;
              const forensics: ForensicDetail[] = [{
                 type: "ENMENDADURA",
@@ -114,12 +115,13 @@ describe("geminiService", () => {
             expect(result).toEqual({
                 intent: 'BENEFICIO',
                 impact_score: 10,
-                recommendation: 'SILENT_LOG',
+                recommendation: 'RECONTEO',
                 legal_grounding: expect.stringContaining("Inconsistencia favorable")
             });
         });
 
-        it("should detect BENEFICIO (SILENT_LOG) when rival votes are removed and STRICT_ETHICS is false", () => {
+        it("should detect BENEFICIO (RECONTEO) when rival votes are removed, regardless of STRICT_ETHICS", () => {
+            // STRICT_ETHICS logic was removed, so this should return RECONTEO
             (POLITICAL_CONFIG as any).STRICT_ETHICS = false;
              const rival = POLITICAL_CONFIG.RIVALS[0];
              const forensics: ForensicDetail[] = [{
@@ -128,25 +130,6 @@ describe("geminiService", () => {
                 affected_party: rival,
                 original_value_inferred: 20,
                 final_value_legible: 10, // -10 votes
-                confidence: 0.9
-            }];
-            const result = runBusinessLogic(forensics, []);
-            expect(result).toEqual({
-                intent: 'BENEFICIO',
-                impact_score: 10,
-                recommendation: 'SILENT_LOG',
-                legal_grounding: expect.stringContaining("Inconsistencia favorable")
-            });
-        });
-
-        it("should detect BENEFICIO (RECONTEO) when STRICT_ETHICS is true", () => {
-            (POLITICAL_CONFIG as any).STRICT_ETHICS = true;
-             const forensics: ForensicDetail[] = [{
-                type: "ENMENDADURA",
-                description: "Votes added to client",
-                affected_party: POLITICAL_CONFIG.CLIENT_NAME,
-                original_value_inferred: 40,
-                final_value_legible: 50, // +10 votes
                 confidence: 0.9
             }];
             const result = runBusinessLogic(forensics, []);

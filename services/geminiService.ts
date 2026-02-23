@@ -159,11 +159,11 @@ export function runBusinessLogic(forensics: ForensicDetail[] = [], votes: VoteCo
       legal_grounding: 'Alteración de resultados electorales (Art. 192 Código Electoral). Discrepancia aritmética inducida.'
     };
   } else if (detectedIntent === 'BENEFICIO') {
-     // If strict ethics is OFF, we silent log beneficial errors
+     // Always report beneficial inconsistencies for transparency
      return {
        intent: 'BENEFICIO',
        impact_score: totalImpact,
-       recommendation: POLITICAL_CONFIG.STRICT_ETHICS ? 'RECONTEO' : 'SILENT_LOG',
+       recommendation: 'RECONTEO',
        legal_grounding: 'Inconsistencia favorable detectada.'
      };
   }
