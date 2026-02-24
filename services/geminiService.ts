@@ -2,8 +2,19 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+const getAiClient = () => {
+  if (ai) return ai;
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing GEMINI_API_KEY environment variable. Please set it in your .env file.");
+  }
+
+  ai = new GoogleGenAI({ apiKey });
+  return ai;
+};
 
 const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
 
@@ -12,6 +23,8 @@ export const analyzeElectionAct = async (
   mimeType: string
 ): Promise<Partial<AnalyzedAct>> => {
   try {
+    const client = getAiClient();
+
     const prompt = `
       Actúa como un Auditor Forense Electoral Experto (Nivel CNE Colombia). Analiza esta imagen del formulario E-14.
       
@@ -27,7 +40,7 @@ export const analyzeElectionAct = async (
       Retorna un objeto JSON con la estructura exacta definida.
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
       model: MODEL_NAME,
       contents: {
         parts: [
