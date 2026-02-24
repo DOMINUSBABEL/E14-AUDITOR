@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SystemMetrics, AnalyzedAct } from '../types';
-import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare, type LucideIcon } from 'lucide-react';
+
+interface MetricCardProps {
+  title: string;
+  value: string;
+  icon: LucideIcon;
+  color: string;
+  sub: string;
+}
 
 interface DashboardProps {
   metrics: SystemMetrics;
@@ -263,7 +271,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
   );
 };
 
-const MetricCard = ({ title, value, icon: Icon, color, sub }: any) => (
+const MetricCard = ({ title, value, icon: Icon, color, sub }: MetricCardProps) => (
   <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
     <div className="flex items-start justify-between">
       <div>
