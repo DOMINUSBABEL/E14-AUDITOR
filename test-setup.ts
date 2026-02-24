@@ -1,6 +1,7 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { afterEach, mock } from 'bun:test';
-import { cleanup } from '@testing-library/react';
+
+GlobalRegistrator.register();
 
 // Set dummy API key for testing
 process.env.API_KEY = 'dummy-key-for-testing';
@@ -25,9 +26,6 @@ mock.module('@google/genai', () => {
     };
 });
 
-
-GlobalRegistrator.register();
-
 // Mock URL.createObjectURL and URL.revokeObjectURL
 if (typeof URL.createObjectURL === 'undefined') {
   (URL.createObjectURL as any) = () => 'blob:mock-url';
@@ -39,6 +37,7 @@ if (typeof URL.createObjectURL === 'undefined') {
     (URL.revokeObjectURL as any) = () => {};
 }
 
-afterEach(() => {
+afterEach(async () => {
+    const { cleanup } = await import('@testing-library/react');
     cleanup();
 });

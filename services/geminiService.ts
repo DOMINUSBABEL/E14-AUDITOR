@@ -82,7 +82,13 @@ export const analyzeElectionAct = async (
     const text = response.text;
     if (!text) throw new Error("No response from Gemini");
 
-    const data = JSON.parse(text);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response as JSON:", text);
+      throw new Error("Failed to parse Gemini response");
+    }
 
     // --- BUSINESS LOGIC ENGINE (CLIENT SIDE) ---
     // Classify Intent and Generate Recommendation locally to ensure client-specific logic control
