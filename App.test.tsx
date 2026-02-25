@@ -4,19 +4,6 @@ import { render, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 
 // Mock child components
-mock.module('./components/Sidebar', () => {
-  return {
-    default: ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => (
-      <div data-testid="sidebar">
-        <button onClick={() => setActiveTab('dashboard')}>Dashboard</button>
-        <button onClick={() => setActiveTab('live')}>Live</button>
-        <button onClick={() => setActiveTab('audit')}>Audit</button>
-        <button onClick={() => setActiveTab('data')}>Data</button>
-      </div>
-    )
-  };
-});
-
 mock.module('./components/Dashboard', () => {
   return { default: () => <div data-testid="dashboard">Dashboard Component</div> };
 });
@@ -38,7 +25,7 @@ describe('App Component', () => {
 
   it('switches to Live Monitor when tab is clicked', async () => {
     const { getByText, getByTestId, queryByTestId } = render(<App />);
-    const liveButton = getByText('Live');
+    const liveButton = getByText('Architecture & Logs');
     fireEvent.click(liveButton);
 
     await waitFor(() => {
@@ -49,7 +36,7 @@ describe('App Component', () => {
 
   it('switches to Manual Audit when tab is clicked', async () => {
       const { getByText, getByTestId } = render(<App />);
-      const auditButton = getByText('Audit');
+      const auditButton = getByText('Forensic Audit');
       fireEvent.click(auditButton);
 
       await waitFor(() => {
@@ -59,7 +46,7 @@ describe('App Component', () => {
 
   it('switches to Data Lake when tab is clicked', async () => {
       const { getByText, getByTestId } = render(<App />);
-      const dataButton = getByText('Data');
+      const dataButton = getByText('Data Lake');
       fireEvent.click(dataButton);
 
       await waitFor(() => {
@@ -71,22 +58,22 @@ describe('App Component', () => {
       const { getByText } = render(<App />);
 
       // Default Dashboard
-      expect(getByText('Control Center')).toBeTruthy();
+      expect(getByText('Control Center', { selector: 'h2' })).toBeTruthy();
 
       // Live
-      fireEvent.click(getByText('Live'));
+      fireEvent.click(getByText('Architecture & Logs'));
       await waitFor(() => {
           expect(getByText('Architecture & Live Logs')).toBeTruthy();
       });
 
       // Audit
-      fireEvent.click(getByText('Audit'));
+      fireEvent.click(getByText('Forensic Audit'));
       await waitFor(() => {
           expect(getByText('Manual Forensic Audit')).toBeTruthy();
       });
 
       // Data
-      fireEvent.click(getByText('Data'));
+      fireEvent.click(getByText('Data Lake'));
       await waitFor(() => {
           expect(getByText('Data Lake (PocketBase)')).toBeTruthy();
       });
