@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SystemMetrics, AnalyzedAct } from '../types';
 import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare, type LucideIcon } from 'lucide-react';
@@ -37,13 +37,21 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
     { name: 'Fraud/Error', value: metrics.fraudDetected },
   ];
 
-  const partyData = [
-    { name: 'P. Liberal', votes: 4500 },
-    { name: 'P. Cons.', votes: 3200 },
-    { name: 'P. Verde', votes: 2100 },
-    { name: 'P. Alt.', votes: 1800 },
-    { name: 'Blanco', votes: 500 },
-  ];
+  const partyData = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    acts.forEach(act => {
+      if (act.votes) {
+        act.votes.forEach(vote => {
+          counts[vote.party] = (counts[vote.party] || 0) + vote.count;
+        });
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([name, votes]) => ({ name, votes }))
+      .sort((a, b) => b.votes - a.votes); // Sort by votes descending
+  }, [acts]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
