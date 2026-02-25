@@ -2,6 +2,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
 
+// Optimization: Convert RIVALS array to Set for O(1) lookup
+const RIVALS_SET = new Set(POLITICAL_CONFIG.RIVALS);
+
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -137,7 +140,7 @@ export function runBusinessLogic(forensics: ForensicDetail[] = [], votes: VoteCo
       }
     } 
     // Case 2: Rival votes modified
-    else if (POLITICAL_CONFIG.RIVALS.includes(f.affected_party)) {
+    else if (RIVALS_SET.has(f.affected_party)) {
       if (delta > 0) {
         // Rival artificially gained votes -> Prejudice to us
         totalImpact -= delta; 
