@@ -3,7 +3,7 @@ import { afterEach, mock } from 'bun:test';
 import { cleanup } from '@testing-library/react';
 
 // Set dummy API key for testing
-process.env.API_KEY = 'dummy-key-for-testing';
+process.env.GEMINI_API_KEY = 'dummy-key-for-testing';
 
 // Mock GoogleGenAI globally to prevent initialization errors
 mock.module('@google/genai', () => {
