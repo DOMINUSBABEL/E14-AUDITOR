@@ -4,22 +4,6 @@ import { describe, it, expect, mock } from 'bun:test';
 import Dashboard from './Dashboard';
 import { SystemMetrics, AnalyzedAct } from '../types';
 
-// Mock Recharts to avoid rendering issues in test environment
-mock.module('recharts', () => {
-  return {
-    ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
-    BarChart: () => <div data-testid="bar-chart" />,
-    Bar: () => <div />,
-    XAxis: () => <div />,
-    YAxis: () => <div />,
-    CartesianGrid: () => <div />,
-    Tooltip: () => <div />,
-    PieChart: () => <div data-testid="pie-chart" />,
-    Pie: () => <div />,
-    Cell: () => <div />,
-  };
-});
-
 const mockMetrics: SystemMetrics = {
   totalProcessed: 1000,
   fraudDetected: 50,
