@@ -4,30 +4,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 
 // Mock child components
-mock.module('./components/Sidebar', () => {
-  return {
-    default: ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => (
-      <div data-testid="sidebar">
-        <button onClick={() => setActiveTab('dashboard')}>Dashboard</button>
-        <button onClick={() => setActiveTab('live')}>Live</button>
-        <button onClick={() => setActiveTab('audit')}>Audit</button>
-        <button onClick={() => setActiveTab('data')}>Data</button>
-      </div>
-    )
-  };
-});
-
-mock.module('./components/Dashboard', () => {
-  return { default: () => <div data-testid="dashboard">Dashboard Component</div> };
-});
-
-mock.module('./components/LiveMonitor', () => {
-  return { default: () => <div data-testid="live-monitor">LiveMonitor Component</div> };
-});
-
-mock.module('./components/DataLake', () => {
-  return { default: () => <div data-testid="data-lake">DataLake Component</div> };
-});
+// Removed global mocks to prevent leaking into unit tests.
+// Dependencies (like lucide-react) are mocked in test-setup.ts.
 
 describe('App Component', () => {
   it('renders sidebar and dashboard by default', () => {
@@ -38,7 +16,7 @@ describe('App Component', () => {
 
   it('switches to Live Monitor when tab is clicked', async () => {
     const { getByText, getByTestId, queryByTestId } = render(<App />);
-    const liveButton = getByText('Live');
+    const liveButton = getByText('Architecture & Logs');
     fireEvent.click(liveButton);
 
     await waitFor(() => {
@@ -49,7 +27,7 @@ describe('App Component', () => {
 
   it('switches to Manual Audit when tab is clicked', async () => {
       const { getByText, getByTestId } = render(<App />);
-      const auditButton = getByText('Audit');
+      const auditButton = getByText('Forensic Audit');
       fireEvent.click(auditButton);
 
       await waitFor(() => {
@@ -59,7 +37,7 @@ describe('App Component', () => {
 
   it('switches to Data Lake when tab is clicked', async () => {
       const { getByText, getByTestId } = render(<App />);
-      const dataButton = getByText('Data');
+      const dataButton = getByText('Data Lake');
       fireEvent.click(dataButton);
 
       await waitFor(() => {
@@ -68,25 +46,30 @@ describe('App Component', () => {
   });
 
   it('updates header text based on active tab', async () => {
-      const { getByText } = render(<App />);
+      const { getByText, getAllByText } = render(<App />);
 
-      // Default Dashboard
-      expect(getByText('Control Center')).toBeTruthy();
+      // Default Dashboard (Control Center is in Sidebar AND Header)
+      expect(getAllByText('Control Center')).toBeTruthy();
 
       // Live
-      fireEvent.click(getByText('Live'));
+      fireEvent.click(getByText('Architecture & Logs'));
       await waitFor(() => {
+          // Architecture & Logs is in Sidebar, Architecture & Live Logs is in Header
           expect(getByText('Architecture & Live Logs')).toBeTruthy();
       });
 
       // Audit
-      fireEvent.click(getByText('Audit'));
+      fireEvent.click(getByText('Forensic Audit'));
       await waitFor(() => {
           expect(getByText('Manual Forensic Audit')).toBeTruthy();
       });
 
       // Data
-      fireEvent.click(getByText('Data'));
+      // Data Lake is in Sidebar. Data Lake (PocketBase) is in Header
+      // Since 'Data Lake' is part of 'Data Lake (PocketBase)', getByText might need partial match or exact.
+      // But button is "Data Lake" (exact). Header is "Data Lake (PocketBase)".
+      // We click the sidebar button.
+      fireEvent.click(getByText('Data Lake'));
       await waitFor(() => {
           expect(getByText('Data Lake (PocketBase)')).toBeTruthy();
       });
