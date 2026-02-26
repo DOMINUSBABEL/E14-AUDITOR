@@ -9,7 +9,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full fixed left-0 top-0 z-10">
+    <aside className="fixed left-0 top-0 w-64 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-20 shadow-2xl" data-testid="sidebar">
       <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
         <div className="bg-primary-600 p-2 rounded-lg">
           <ShieldCheck className="text-white w-6 h-6" />
