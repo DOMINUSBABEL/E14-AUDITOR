@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
+import { logger } from "./logger";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -100,7 +101,7 @@ export const analyzeElectionAct = async (
     };
 
   } catch (error) {
-    console.error("Gemini Analysis Failed:", error);
+    logger.error("Gemini Analysis Failed:", error);
     throw error;
   }
 };
