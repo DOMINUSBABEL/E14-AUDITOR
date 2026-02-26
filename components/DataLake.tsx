@@ -73,7 +73,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="h-full flex flex-col space-y-6" data-testid="data-lake">
       {/* Header / Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
         <div className="relative w-full md:w-96">

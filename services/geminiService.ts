@@ -3,6 +3,9 @@ import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../ty
 import { POLITICAL_CONFIG } from "../constants";
 
 // Initialize Gemini Client
+if (!process.env.API_KEY) {
+  throw new Error("Gemini API Key is missing. Please set API_KEY in your environment variables.");
+}
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
