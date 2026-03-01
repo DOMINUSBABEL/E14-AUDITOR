@@ -1,4 +1,6 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
+GlobalRegistrator.register();
+
 import { afterEach, mock } from 'bun:test';
 import { cleanup } from '@testing-library/react';
 
@@ -25,8 +27,6 @@ mock.module('@google/genai', () => {
     };
 });
 
-
-GlobalRegistrator.register();
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
 if (typeof URL.createObjectURL === 'undefined') {
