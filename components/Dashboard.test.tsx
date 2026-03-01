@@ -50,10 +50,10 @@ describe('Dashboard Component', () => {
   it('renders metric cards correctly', () => {
     const { getByText } = render(<Dashboard metrics={mockMetrics} acts={mockActs} />);
 
-    expect(getByText('Total Processed')).toBeTruthy();
+    expect(getByText('Total Processed', { selector: 'p' })).toBeTruthy();
     expect(getByText('1,000')).toBeTruthy();
 
-    expect(getByText('Fraud Detected')).toBeTruthy();
+    expect(getByText('Fraud Detected', { selector: 'p' })).toBeTruthy();
     expect(getByText('50')).toBeTruthy();
 
     expect(getByText('Queue Load')).toBeTruthy();

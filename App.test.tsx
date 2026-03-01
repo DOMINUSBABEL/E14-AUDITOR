@@ -17,17 +17,23 @@ mock.module('./components/Sidebar', () => {
   };
 });
 
-mock.module('./components/Dashboard', () => {
-  return { default: () => <div data-testid="dashboard">Dashboard Component</div> };
+// Mock Recharts globally here as well to fix App Component tests since they no longer mock Dashboard
+mock.module('recharts', () => {
+  return {
+    ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
+    BarChart: () => <div data-testid="bar-chart" />,
+    Bar: () => <div />,
+    XAxis: () => <div />,
+    YAxis: () => <div />,
+    CartesianGrid: () => <div />,
+    Tooltip: () => <div />,
+    PieChart: () => <div data-testid="pie-chart" />,
+    Pie: () => <div />,
+    Cell: () => <div />,
+  };
 });
 
-mock.module('./components/LiveMonitor', () => {
-  return { default: () => <div data-testid="live-monitor">LiveMonitor Component</div> };
-});
-
-mock.module('./components/DataLake', () => {
-  return { default: () => <div data-testid="data-lake">DataLake Component</div> };
-});
+// Do not mock internal components globally in integration tests
 
 describe('App Component', () => {
   it('renders sidebar and dashboard by default', () => {
