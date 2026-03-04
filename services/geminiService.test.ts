@@ -2,6 +2,8 @@ import { describe, it, expect, mock, beforeAll, afterAll } from "bun:test";
 import { ForensicDetail, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
 
+let mockGenerateContentResponse = Promise.resolve({ text: "{}" });
+
 // Mock GoogleGenAI to prevent initialization errors during import
 // This needs to happen before importing the service
 mock.module("@google/genai", () => {
@@ -9,7 +11,7 @@ mock.module("@google/genai", () => {
     GoogleGenAI: class {
       constructor() {}
       models = {
-        generateContent: () => Promise.resolve({ text: "{}" })
+        generateContent: () => mockGenerateContentResponse
       }
     },
     Type: {
@@ -23,17 +25,84 @@ mock.module("@google/genai", () => {
   };
 });
 
+export const setMockGenerateContentResponse = (response: any) => {
+    mockGenerateContentResponse = response;
+};
+
 describe("geminiService", () => {
   let runBusinessLogic: any;
+  let analyzeElectionAct: any;
   const originalEthics = POLITICAL_CONFIG.STRICT_ETHICS;
 
   beforeAll(async () => {
       const module = await import("./geminiService");
       runBusinessLogic = module.runBusinessLogic;
+      analyzeElectionAct = module.analyzeElectionAct;
   });
 
   afterAll(() => {
     (POLITICAL_CONFIG as any).STRICT_ETHICS = originalEthics;
+  });
+
+  describe("analyzeElectionAct", () => {
+    it("should successfully process a valid response from Gemini", async () => {
+        const mockResponse = {
+            mesa: "Mesa 1",
+            zona: "Zona A",
+            votes: [{ party: POLITICAL_CONFIG.CLIENT_NAME, count: 100 }],
+            total_calculated: 100,
+            total_declared: 100,
+            is_fraud: false,
+            forensic_analysis: []
+        };
+
+        setMockGenerateContentResponse(Promise.resolve({ text: JSON.stringify(mockResponse) }));
+
+        const result = await analyzeElectionAct("base64data", "image/jpeg");
+
+        expect(result.mesa).toBe("Mesa 1");
+        expect(result.zona).toBe("Zona A");
+        expect(result.votes).toEqual(mockResponse.votes);
+        expect(result.strategic_analysis.intent).toBe("NEUTRO");
+    });
+
+    it("should handle scenarios where Gemini response text is empty", async () => {
+        setMockGenerateContentResponse(Promise.resolve({ text: "" }));
+
+        expect(analyzeElectionAct("base64data", "image/jpeg")).rejects.toThrow("No response from Gemini");
+    });
+
+    it("should handle scenarios where Gemini response contains invalid JSON", async () => {
+        setMockGenerateContentResponse(Promise.resolve({ text: "invalid json string" }));
+
+        expect(analyzeElectionAct("base64data", "image/jpeg")).rejects.toThrow("Failed to parse Gemini response");
+    });
+
+    it("should apply business logic based on forensic analysis correctly", async () => {
+        const mockResponse = {
+            mesa: "Mesa 2",
+            zona: "Zona B",
+            votes: [],
+            total_calculated: 0,
+            total_declared: 0,
+            is_fraud: true,
+            forensic_analysis: [{
+                type: "TACHON",
+                description: "Votes removed",
+                affected_party: POLITICAL_CONFIG.CLIENT_NAME,
+                original_value_inferred: 50,
+                final_value_legible: 40,
+                confidence: 0.9
+            }]
+        };
+
+        setMockGenerateContentResponse(Promise.resolve({ text: JSON.stringify(mockResponse) }));
+
+        const result = await analyzeElectionAct("base64data", "image/jpeg");
+
+        expect(result.strategic_analysis.intent).toBe("PERJUICIO");
+        expect(result.strategic_analysis.recommendation).toBe("IMPUGNAR");
+    });
   });
 
   describe("runBusinessLogic", () => {
