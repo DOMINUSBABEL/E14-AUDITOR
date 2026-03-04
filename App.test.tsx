@@ -3,20 +3,6 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 
-// Mock child components
-mock.module('./components/Sidebar', () => {
-  return {
-    default: ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => (
-      <div data-testid="sidebar">
-        <button onClick={() => setActiveTab('dashboard')}>Dashboard</button>
-        <button onClick={() => setActiveTab('live')}>Live</button>
-        <button onClick={() => setActiveTab('audit')}>Audit</button>
-        <button onClick={() => setActiveTab('data')}>Data</button>
-      </div>
-    )
-  };
-});
-
 // Mock Recharts globally here as well to fix App Component tests since they no longer mock Dashboard
 mock.module('recharts', () => {
   return {
@@ -37,14 +23,14 @@ mock.module('recharts', () => {
 
 describe('App Component', () => {
   it('renders sidebar and dashboard by default', () => {
-    const { getByTestId } = render(<App />);
-    expect(getByTestId('sidebar')).toBeTruthy();
+    const { getByTestId, getByText } = render(<App />);
+    expect(getByText('Control Center', { selector: 'span' })).toBeTruthy(); // Sidebar item
     expect(getByTestId('dashboard')).toBeTruthy();
   });
 
   it('switches to Live Monitor when tab is clicked', async () => {
     const { getByText, getByTestId, queryByTestId } = render(<App />);
-    const liveButton = getByText('Live');
+    const liveButton = getByText('Architecture & Logs', { selector: 'span' });
     fireEvent.click(liveButton);
 
     await waitFor(() => {
@@ -55,7 +41,7 @@ describe('App Component', () => {
 
   it('switches to Manual Audit when tab is clicked', async () => {
       const { getByText, getByTestId } = render(<App />);
-      const auditButton = getByText('Audit');
+      const auditButton = getByText('Forensic Audit', { selector: 'span' });
       fireEvent.click(auditButton);
 
       await waitFor(() => {
@@ -65,7 +51,7 @@ describe('App Component', () => {
 
   it('switches to Data Lake when tab is clicked', async () => {
       const { getByText, getByTestId } = render(<App />);
-      const dataButton = getByText('Data');
+      const dataButton = getByText('Data Lake', { selector: 'span' });
       fireEvent.click(dataButton);
 
       await waitFor(() => {
@@ -77,22 +63,22 @@ describe('App Component', () => {
       const { getByText } = render(<App />);
 
       // Default Dashboard
-      expect(getByText('Control Center')).toBeTruthy();
+      expect(getByText('Control Center', { selector: 'h2' })).toBeTruthy();
 
       // Live
-      fireEvent.click(getByText('Live'));
+      fireEvent.click(getByText('Architecture & Logs', { selector: 'span' }));
       await waitFor(() => {
           expect(getByText('Architecture & Live Logs')).toBeTruthy();
       });
 
       // Audit
-      fireEvent.click(getByText('Audit'));
+      fireEvent.click(getByText('Forensic Audit', { selector: 'span' }));
       await waitFor(() => {
           expect(getByText('Manual Forensic Audit')).toBeTruthy();
       });
 
       // Data
-      fireEvent.click(getByText('Data'));
+      fireEvent.click(getByText('Data Lake', { selector: 'span' }));
       await waitFor(() => {
           expect(getByText('Data Lake (PocketBase)')).toBeTruthy();
       });
