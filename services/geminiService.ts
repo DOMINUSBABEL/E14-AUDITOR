@@ -1,20 +1,34 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import OpenAI from "openai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
 import { POLITICAL_CONFIG } from "../constants";
 
-let ai: GoogleGenAI | null = null;
+let aiGemini: GoogleGenAI | null = null;
+let aiOpenAI: OpenAI | null = null;
 
-const getAiClient = () => {
-  if (ai) return ai;
+const getProvider = () => process.env.VITE_AI_PROVIDER || 'gemini';
+
+const getGeminiClient = () => {
+  if (aiGemini) return aiGemini;
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Missing GEMINI_API_KEY environment variable. Please set it in your .env file.");
   }
 
-  ai = new GoogleGenAI({ apiKey });
-  return ai;
+  aiGemini = new GoogleGenAI({ apiKey });
+  return aiGemini;
 };
+
+const getOpenAIClient = () => {
+  if (aiOpenAI) return aiOpenAI;
+  
+  const baseURL = process.env.VITE_OPENAI_BASE_URL || 'http://localhost:11434/v1'; // Default Ollama
+  const apiKey = process.env.VITE_OPENAI_API_KEY || 'ollama';
+
+  aiOpenAI = new OpenAI({ baseURL, apiKey, dangerouslyAllowBrowser: true });
+  return aiOpenAI;
+}
 
 const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
 
@@ -23,8 +37,8 @@ export const analyzeElectionAct = async (
   mimeType: string
 ): Promise<Partial<AnalyzedAct>> => {
   try {
-    const client = getAiClient();
-
+    const provider = getProvider();
+    
     const prompt = `
       Actúa como un Auditor Forense Electoral Experto (Nivel CNE Colombia). Analiza esta imagen del formulario E-14.
       
@@ -37,65 +51,95 @@ export const analyzeElectionAct = async (
       3. TRAZABILIDAD (Pre/Post):
          - Si hay una alteración, intenta inferir el número ORIGINAL (antes) y el FINAL (después).
       
-      Retorna un objeto JSON con la estructura exacta definida.
+      Retorna un objeto JSON con la estructura exacta de un arreglo que tenga 'mesa', 'zona', 'votes' (arreglo de 'party', 'count'), 'total_calculated', 'total_declared', 'is_fraud', 'forensic_analysis' (arreglo de 'type', 'description', 'affected_party', 'original_value_inferred', 'final_value_legible', 'confidence').
     `;
 
-    const response = await client.models.generateContent({
-      model: MODEL_NAME,
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Image
-            }
-          },
-          { text: prompt }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            mesa: { type: Type.STRING },
-            zona: { type: Type.STRING },
-            votes: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  party: { type: Type.STRING },
-                  count: { type: Type.INTEGER }
-                }
+    let data;
+
+    if (provider === 'gemini') {
+      const client = getGeminiClient();
+      const response = await client.models.generateContent({
+        model: MODEL_NAME,
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Image
               }
             },
-            total_calculated: { type: Type.INTEGER },
-            total_declared: { type: Type.INTEGER },
-            is_fraud: { type: Type.BOOLEAN },
-            forensic_analysis: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING, enum: ["TACHON", "ENMENDADURA", "CALIGRAFIA", "NONE"] },
-                  description: { type: Type.STRING },
-                  affected_party: { type: Type.STRING },
-                  original_value_inferred: { type: Type.INTEGER, nullable: true },
-                  final_value_legible: { type: Type.INTEGER },
-                  confidence: { type: Type.NUMBER }
+            { text: prompt }
+          ]
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              mesa: { type: Type.STRING },
+              zona: { type: Type.STRING },
+              votes: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    party: { type: Type.STRING },
+                    count: { type: Type.INTEGER }
+                  }
+                }
+              },
+              total_calculated: { type: Type.INTEGER },
+              total_declared: { type: Type.INTEGER },
+              is_fraud: { type: Type.BOOLEAN },
+              forensic_analysis: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    type: { type: Type.STRING, enum: ["TACHON", "ENMENDADURA", "CALIGRAFIA", "NONE"] },
+                    description: { type: Type.STRING },
+                    affected_party: { type: Type.STRING },
+                    original_value_inferred: { type: Type.INTEGER, nullable: true },
+                    final_value_legible: { type: Type.INTEGER },
+                    confidence: { type: Type.NUMBER }
+                  }
                 }
               }
             }
           }
         }
-      }
-    });
-
-    const text = response.text;
-    if (!text) throw new Error("No response from Gemini");
-
-    const data = JSON.parse(text);
+      });
+      const text = response.text;
+      if (!text) throw new Error("No response from Gemini");
+      data = JSON.parse(text);
+    } else {
+      // OPENAI COMPATIBLE PROVIDER (e.g. Ollama with Qwen2-VL or DeepSeek-VL)
+      const client = getOpenAIClient();
+      const model = process.env.VITE_OPENAI_MODEL || 'qwen2-vl';
+      
+      const response = await client.chat.completions.create({
+        model: model,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`,
+                },
+              },
+            ],
+          },
+        ],
+      });
+      
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No response from alternative AI provider");
+      data = JSON.parse(content);
+    }
 
     // --- BUSINESS LOGIC ENGINE (CLIENT SIDE) ---
     // Classify Intent and Generate Recommendation locally to ensure client-specific logic control
@@ -113,7 +157,7 @@ export const analyzeElectionAct = async (
     };
 
   } catch (error) {
-    console.error("Gemini Analysis Failed:", error);
+    console.error("AI Analysis Failed:", error);
     throw error;
   }
 };
