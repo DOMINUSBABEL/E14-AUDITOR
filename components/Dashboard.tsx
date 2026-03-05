@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SystemMetrics, AnalyzedAct } from '../types';
 import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare, type LucideIcon } from 'lucide-react';
@@ -30,6 +30,8 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
     },
     recipient: 'admin@auditor-ai.com'
   });
+
+  const fraudActs = useMemo(() => acts.filter(a => a.is_fraud), [acts]);
 
   // Mock data for charts derived from simulated acts
   const fraudData = [
@@ -158,7 +160,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {acts.filter(a => a.is_fraud).slice(0, 5).map((act) => (
+              {fraudActs.slice(0, 5).map((act) => (
                 <tr key={act.id} className="hover:bg-slate-800/50">
                   <td className="px-6 py-4 font-mono">{act.timestamp}</td>
                   <td className="px-6 py-4 text-white font-medium">{act.mesa}</td>
@@ -176,7 +178,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
                   </td>
                 </tr>
               ))}
-              {acts.filter(a => a.is_fraud).length === 0 && (
+              {fraudActs.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
                     No fraud alerts detected in current batch.
