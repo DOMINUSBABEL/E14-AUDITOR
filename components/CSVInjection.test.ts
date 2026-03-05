@@ -40,4 +40,19 @@ describe("CSV Injection Security", () => {
     expect(row).toContain('"\'-ACT1"');
     expect(row).toContain('"\'@TODAY()"');
   });
+
+  test("should escape tab and carriage return to prevent CSV injection", () => {
+    const maliciousAct = {
+      ...mockAct,
+      mesa: "\t=SUM(1,2)",
+      zona: "\r+1+2",
+    };
+    const columns = ["mesa", "zona"];
+    const chunks = generateCSVChunks([maliciousAct as AnalyzedAct], columns);
+
+    const row = chunks[2];
+
+    expect(row).toContain('"\'\t=SUM(1,2)"');
+    expect(row).toContain('"\'\r+1+2"');
+  });
 });
