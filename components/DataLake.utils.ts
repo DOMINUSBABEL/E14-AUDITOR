@@ -52,8 +52,8 @@ export function generateCSVChunks(dataToExport: AnalyzedAct[], columns: string[]
       let val = columnHandlers[j](act);
 
       if (typeof val === 'string') {
-        // CSV Injection mitigation: escape formula indicators (=, +, -, @) by prepending a single quote
-        if (['=', '+', '-', '@'].includes(val[0])) {
+        // CSV Injection mitigation: escape formula indicators (=, +, -, @, \t, \r) by prepending a single quote
+        if (['=', '+', '-', '@', '\t', '\r'].includes(val[0])) {
           val = "'" + val;
         }
 
