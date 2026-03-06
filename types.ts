@@ -25,8 +25,16 @@ export interface AssignedLawyer {
   team: string; // Party they represent
 }
 
+export interface DocumentIntegrity {
+  estado: 'IMPUGNABLE' | 'NO IMPUGNABLE' | 'ERROR_DE_LECTURA';
+  hallazgos: string[];
+  nivel_de_confianza: 'Alto' | 'Medio' | 'Bajo';
+  conclusion: string;
+}
+
 export interface AnalyzedAct {
   id: string;
+  archivo_analizado?: string;
   mesa: string;
   zona: string;
   votes: VoteCount[];
@@ -38,6 +46,7 @@ export interface AnalyzedAct {
   is_fraud: boolean;
   
   // Advanced Forensic & Logic
+  document_integrity?: DocumentIntegrity;
   forensic_analysis: ForensicDetail[];
   strategic_analysis?: StrategicAnalysis;
   

@@ -13,6 +13,8 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [exportConfig, setExportConfig] = useState({
     startDate: '',
     endDate: '',
+    format: 'csv' as 'csv' | 'xlsx' | 'json',
+    targetParty: 'ALL',
     columns: {
       id: true,
       mesa: true,
@@ -21,12 +23,17 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
       total_declared: true,
       is_fraud: true,
       timestamp: true,
-      // New Forensic Columns
       strategic_intent: true,
       strategic_recommendation: true,
       forensic_summary: true,
     }
   });
+
+  const parties = useMemo(() => {
+    const pSet = new Set<string>();
+    acts.forEach(a => a.votes.forEach(v => pSet.add(v.party)));
+    return Array.from(pSet).sort();
+  }, [acts]);
 
   const filteredActs = useMemo(() => acts.filter(act =>
     act.mesa.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -34,47 +41,58 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
     act.id.includes(searchTerm)
   ), [acts, searchTerm]);
 
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  };
+
   const handleExport = () => {
-    // 1. Filter Data by Date
     let dataToExport = acts;
     if (exportConfig.startDate || exportConfig.endDate) {
       dataToExport = dataToExport.filter(act => {
         const actDate = new Date(act.isoTimestamp);
         const start = exportConfig.startDate ? new Date(exportConfig.startDate) : new Date('2000-01-01');
         const end = exportConfig.endDate ? new Date(exportConfig.endDate) : new Date();
-        // Adjust end date to include the full day
         end.setHours(23, 59, 59, 999);
         return actDate >= start && actDate <= end;
       });
     }
 
-    // 2. Filter Columns
+    if (exportConfig.targetParty !== 'ALL') {
+      dataToExport = dataToExport.filter(act => 
+        act.forensic_analysis.some(f => f.affected_party === exportConfig.targetParty) ||
+        act.votes.some(v => v.party === exportConfig.targetParty)
+      );
+    }
+
     const selectedColumns = Object.entries(exportConfig.columns)
       .filter(([_, isSelected]) => isSelected)
       .map(([key]) => key);
 
-    // 3. Generate CSV
-    const chunks = generateCSVChunks(dataToExport, selectedColumns);
-    const blob = new Blob(chunks, { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    // 4. Download
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `auditor_export_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    if (exportConfig.format === 'json') {
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `auditor_export_${new Date().toISOString().slice(0,10)}.json`);
+    } else if (exportConfig.format === 'xlsx') {
+      import('./DataLake.utils').then(utils => {
+        utils.exportToExcel(dataToExport, selectedColumns, `auditor_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+      });
+    } else {
+      const chunks = generateCSVChunks(dataToExport, selectedColumns);
+      const blob = new Blob(chunks, { type: 'text/csv;charset=utf-8;' });
+      downloadBlob(blob, `auditor_export_${new Date().toISOString().slice(0,10)}.csv`);
+    }
     
     setShowExportModal(false);
   };
 
   return (
     <div data-testid="data-lake" className="h-full flex flex-col space-y-6">
-      {/* Header / Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
@@ -101,7 +119,6 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-400">
@@ -124,7 +141,6 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                   <td className="px-6 py-4 font-bold text-white">{act.mesa}</td>
                   <td className="px-6 py-4">{act.zona}</td>
                   
-                  {/* Intent Column */}
                   <td className="px-6 py-4 text-center">
                     {act.strategic_analysis?.intent && (
                       <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
@@ -137,12 +153,10 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                     )}
                   </td>
 
-                  {/* Recommendation Column */}
                   <td className="px-6 py-4 text-center font-mono text-xs text-white">
                      {act.strategic_analysis?.recommendation || '-'}
                   </td>
 
-                   {/* Forensic Summary */}
                   <td className="px-6 py-4 text-center text-xs">
                      {act.forensic_analysis.length > 0 ? (
                         <div className="flex flex-col gap-1 items-center">
@@ -184,7 +198,6 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
         </div>
       </div>
 
-      {/* Export Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]">
@@ -200,7 +213,38 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
             </div>
 
             <div className="p-6 space-y-8 overflow-y-auto">
-              {/* Date Range Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider block">Format</label>
+                  <div className="flex gap-2">
+                    {['csv', 'xlsx', 'json'].map(fmt => (
+                      <button 
+                        key={fmt}
+                        onClick={() => setExportConfig({...exportConfig, format: fmt as any})}
+                        className={`flex-1 py-2 rounded-lg border font-bold uppercase text-xs transition-all ${
+                          exportConfig.format === fmt 
+                          ? 'bg-primary-600 border-primary-500 text-white shadow-lg shadow-primary-900/40' 
+                          : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
+                        }`}
+                      >
+                        {fmt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider block">Filter by Affected Party</label>
+                  <select 
+                    value={exportConfig.targetParty}
+                    onChange={e => setExportConfig({...exportConfig, targetParty: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-primary-500"
+                  >
+                    <option value="ALL">All Parties</option>
+                    {parties.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
                   <Calendar className="mr-2" size={16} /> Date Range
@@ -227,7 +271,6 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                 </div>
               </div>
 
-              {/* Column Selection Section */}
               <div className="space-y-4">
                 <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
                   <Filter className="mr-2" size={16} /> Select Columns
@@ -251,7 +294,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
 
               <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-4">
                 <p className="text-sm text-blue-400">
-                  <span className="font-bold">Note:</span> Exporting large datasets (over 10,000 rows) may take a few moments. The file will download as a CSV automatically.
+                  <span className="font-bold">Note:</span> Exporting large datasets (over 10,000 rows) may take a few moments. The file will download automatically.
                 </p>
               </div>
             </div>
@@ -268,7 +311,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                 className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold transition-colors flex items-center shadow-lg shadow-green-900/20"
               >
                 <Download size={18} className="mr-2" />
-                Download CSV
+                Download {exportConfig.format.toUpperCase()}
               </button>
             </div>
 

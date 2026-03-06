@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SystemMetrics, AnalyzedAct } from '../types';
 import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare, type LucideIcon } from 'lucide-react';
@@ -31,19 +31,39 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
     recipient: 'admin@auditor-ai.com'
   });
 
-  // Mock data for charts derived from simulated acts
-  const fraudData = [
-    { name: 'Valid', value: metrics.totalProcessed - metrics.fraudDetected },
-    { name: 'Fraud/Error', value: metrics.fraudDetected },
-  ];
+  // REAL DATA AGGREGATION
+  const fraudData = useMemo(() => {
+    const fraudCount = acts.filter(a => a.is_fraud).length;
+    const validCount = acts.length - fraudCount;
+    return [
+      { name: 'Valid', value: validCount },
+      { name: 'Fraud/Error', value: fraudCount },
+    ];
+  }, [acts]);
 
-  const partyData = [
-    { name: 'P. Liberal', votes: 4500 },
-    { name: 'P. Cons.', votes: 3200 },
-    { name: 'P. Verde', votes: 2100 },
-    { name: 'P. Alt.', votes: 1800 },
-    { name: 'Blanco', votes: 500 },
-  ];
+  const partyData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    acts.forEach(act => {
+      act.votes.forEach(v => {
+        counts[v.party] = (counts[v.party] || 0) + v.count;
+      });
+    });
+    
+    return Object.entries(counts)
+      .map(([name, votes]) => ({ name, votes }))
+      .sort((a, b) => b.votes - a.votes)
+      .slice(0, 5);
+  }, [acts]);
+
+  const fraudTypesData = useMemo(() => {
+    const types: Record<string, number> = {};
+    acts.forEach(act => {
+      act.forensic_analysis.forEach(f => {
+        types[f.type] = (types[f.type] || 0) + 1;
+      });
+    });
+    return Object.entries(types).map(([name, value]) => ({ name, value }));
+  }, [acts]);
 
   return (
     <div data-testid="dashboard" className="space-y-6 animate-in fade-in duration-500 relative">
@@ -61,50 +81,56 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard 
           title="Total Processed" 
-          value={metrics.totalProcessed.toLocaleString()} 
+          value={acts.length.toLocaleString()} 
           icon={FileText} 
           color="text-blue-500" 
           sub="Acts Analyzed"
         />
         <MetricCard 
           title="Fraud Detected" 
-          value={metrics.fraudDetected.toLocaleString()} 
+          value={acts.filter(a => a.is_fraud).length.toLocaleString()} 
           icon={AlertTriangle} 
           color="text-red-500" 
           sub="Inconsistencies"
         />
         <MetricCard 
-          title="Queue Load" 
-          value={metrics.queueSize.toLocaleString()} 
+          title="Manual Audits" 
+          value={acts.filter(a => a.archivo_analizado).length.toLocaleString()} 
           icon={Clock} 
           color="text-amber-500" 
-          sub="Pending in Redis"
+          sub="From Local Files"
         />
         <MetricCard 
-          title="Success Rate" 
-          value="97.4%" 
+          title="Impugnable %" 
+          value={acts.length > 0 ? `${((acts.filter(a => a.strategic_analysis?.recommendation === 'IMPUGNAR').length / acts.length) * 100).toFixed(1)}%` : '0%'} 
           icon={CheckCircle} 
           color="text-green-500" 
-          sub="Extraction Accuracy"
+          sub="Legal Action Needed"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-white mb-6">Vote Distribution (Live)</h3>
+          <h3 className="text-lg font-bold text-white mb-6">Vote Distribution (Real Data)</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={partyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} 
-                  itemStyle={{ color: '#f8fafc' }}
-                />
-                <Bar dataKey="votes" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {partyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={partyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="name" stroke="#94a3b8" />
+                  <YAxis stroke="#94a3b8" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} 
+                    itemStyle={{ color: '#f8fafc' }}
+                  />
+                  <Bar dataKey="votes" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-500 border border-dashed border-slate-800 rounded-lg">
+                No vote data extracted yet.
+              </div>
+            )}
           </div>
         </div>
 

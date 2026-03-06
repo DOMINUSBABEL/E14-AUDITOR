@@ -124,6 +124,35 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Function to lift audit results from ManualAudit
+  const addAuditResults = useCallback((newResults: Partial<AnalyzedAct>[]) => {
+    const formattedResults: AnalyzedAct[] = newResults.map(r => ({
+      id: r.id || Math.random().toString(36).substr(2, 9),
+      mesa: r.mesa || 'UNKNOWN',
+      zona: r.zona || 'UNKNOWN',
+      votes: r.votes || [],
+      total_calculated: r.total_calculated || 0,
+      total_declared: r.total_declared || 0,
+      is_fraud: r.is_fraud || false,
+      is_legible: r.document_integrity?.estado !== 'ERROR_DE_LECTURA',
+      forensic_analysis: r.forensic_analysis || [],
+      strategic_analysis: r.strategic_analysis,
+      timestamp: r.timestamp || new Date().toLocaleTimeString(),
+      isoTimestamp: r.isoTimestamp || new Date().toISOString(),
+      status: 'completed',
+      archivo_analizado: r.archivo_analizado
+    }));
+    
+    setActs(prev => [...formattedResults, ...prev].slice(0, 500)); // Increase buffer
+    
+    // Update metrics
+    setMetrics(prev => ({
+      ...prev,
+      totalProcessed: prev.totalProcessed + formattedResults.length,
+      fraudDetected: prev.fraudDetected + formattedResults.filter(a => a.is_fraud).length
+    }));
+  }, []);
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-200 font-sans selection:bg-primary-500/30 selection:text-white overflow-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -158,7 +187,7 @@ const App: React.FC = () => {
 
         {activeTab === 'dashboard' && <Dashboard metrics={metrics} acts={acts} />}
         {activeTab === 'live' && <LiveMonitor logs={logs} />}
-        {activeTab === 'audit' && <ManualAudit />}
+        {activeTab === 'audit' && <ManualAudit onComplete={addAuditResults} />}
         {activeTab === 'data' && <DataLake acts={acts} />}
       </main>
     </div>
