@@ -1,5 +1,10 @@
 import { AnalyzedAct } from '../types';
 import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { generateLegalTemplate } from './LegalUtils';
 
 /**
  * Generates an array of strings representing CSV content from an array of AnalyzedAct objects.
@@ -41,6 +46,58 @@ export function exportToExcel(dataToExport: AnalyzedAct[], columns: string[], fi
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Auditor Audit Report");
   XLSX.writeFile(workbook, fileName);
+}
+
+/**
+ * Exports data to a PDF file.
+ */
+export function exportToPDF(dataToExport: AnalyzedAct[], columns: string[], fileName: string) {
+  const doc = new jsPDF('l', 'pt');
+  const columnHandlers = getColumnHandlers(columns);
+  
+  const headers = columns.map(col => col.replace(/_/g, ' ').toUpperCase());
+  const body = dataToExport.map(act => columns.map((_, j) => columnHandlers[j](act)));
+
+  doc.text("E-14 Real-Time Auditor - Reporte de Auditoría", 40, 40);
+  
+  autoTable(doc, {
+    head: [headers],
+    body: body,
+    startY: 60,
+    styles: { fontSize: 8 },
+    headStyles: { fillStyle: 'f', fillColor: [51, 65, 85] }
+  });
+
+  doc.save(fileName);
+}
+
+/**
+ * Generates a ZIP bundle containing CSV, JSON, and legal analysis TXTs.
+ */
+export async function generateFullAnalysisBundle(dataToExport: AnalyzedAct[], columns: string[], baseFileName: string) {
+  const zip = new JSZip();
+  
+  // 1. Add CSV
+  const csvContent = generateCSVChunks(dataToExport, columns).join('');
+  zip.file(`${baseFileName}.csv`, csvContent);
+  
+  // 2. Add JSON
+  zip.file(`${baseFileName}.json`, JSON.stringify(dataToExport, null, 2));
+  
+  // 3. Add Legal Analysis folder
+  const legalFolder = zip.folder("analisis_juridico");
+  if (legalFolder) {
+    dataToExport.forEach(act => {
+      if (act.is_fraud || act.document_integrity?.estado === 'IMPUGNABLE') {
+        const template = generateLegalTemplate(act);
+        legalFolder.file(`impugnacion_mesa_${act.mesa}.txt`, template);
+      }
+    });
+  }
+  
+  // 4. Generate and save
+  const content = await zip.generateAsync({ type: "blob" });
+  saveAs(content, `${baseFileName}_bundle.zip`);
 }
 
 function getColumnHandlers(columns: string[]) {

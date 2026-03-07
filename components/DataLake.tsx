@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { AnalyzedAct } from '../types';
-import { Download, Search, Calendar, Filter, Database, FileSpreadsheet, X } from 'lucide-react';
+import { Download, Search, Calendar, Filter, Database, FileSpreadsheet, X, Scale, Archive } from 'lucide-react';
 import { generateCSVChunks } from './DataLake.utils';
+import LegalDocumentModal from './LegalDocumentModal';
 
 interface DataLakeProps {
   acts: AnalyzedAct[];
@@ -10,10 +11,11 @@ interface DataLakeProps {
 const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedActForLegal, setSelectedActForLegal] = useState<AnalyzedAct | null>(null);
   const [exportConfig, setExportConfig] = useState({
     startDate: '',
     endDate: '',
-    format: 'csv' as 'csv' | 'xlsx' | 'json',
+    format: 'csv' as 'csv' | 'xlsx' | 'json' | 'pdf' | 'bundle',
     targetParty: 'ALL',
     columns: {
       id: true,
@@ -75,17 +77,27 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
       .filter(([_, isSelected]) => isSelected)
       .map(([key]) => key);
 
+    const fileName = `auditor_export_${new Date().toISOString().slice(0,10)}`;
+
     if (exportConfig.format === 'json') {
       const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, `auditor_export_${new Date().toISOString().slice(0,10)}.json`);
+      downloadBlob(blob, `${fileName}.json`);
     } else if (exportConfig.format === 'xlsx') {
       import('./DataLake.utils').then(utils => {
-        utils.exportToExcel(dataToExport, selectedColumns, `auditor_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+        utils.exportToExcel(dataToExport, selectedColumns, `${fileName}.xlsx`);
+      });
+    } else if (exportConfig.format === 'pdf') {
+      import('./DataLake.utils').then(utils => {
+        utils.exportToPDF(dataToExport, selectedColumns, `${fileName}.pdf`);
+      });
+    } else if (exportConfig.format === 'bundle') {
+      import('./DataLake.utils').then(utils => {
+        utils.generateFullAnalysisBundle(dataToExport, selectedColumns, fileName);
       });
     } else {
       const chunks = generateCSVChunks(dataToExport, selectedColumns);
       const blob = new Blob(chunks, { type: 'text/csv;charset=utf-8;' });
-      downloadBlob(blob, `auditor_export_${new Date().toISOString().slice(0,10)}.csv`);
+      downloadBlob(blob, `${fileName}.csv`);
     }
     
     setShowExportModal(false);
@@ -181,7 +193,16 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-primary-400 hover:text-primary-300 text-xs font-medium">View JSON</button>
+                    <div className="flex items-center space-x-3">
+                        <button className="text-primary-400 hover:text-primary-300 text-xs font-medium">View JSON</button>
+                        <button 
+                            onClick={() => setSelectedActForLegal(act)}
+                            className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-1 rounded border border-slate-700 text-[10px] font-bold transition-colors"
+                        >
+                            <Scale size={12} className="text-primary-500" />
+                            <span>LEGAL</span>
+                        </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -216,17 +237,18 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-400 uppercase tracking-wider block">Format</label>
-                  <div className="flex gap-2">
-                    {['csv', 'xlsx', 'json'].map(fmt => (
+                  <div className="flex flex-wrap gap-2">
+                    {['csv', 'xlsx', 'json', 'pdf', 'bundle'].map(fmt => (
                       <button 
                         key={fmt}
                         onClick={() => setExportConfig({...exportConfig, format: fmt as any})}
-                        className={`flex-1 py-2 rounded-lg border font-bold uppercase text-xs transition-all ${
+                        className={`flex-1 min-w-[60px] py-2 rounded-lg border font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1 ${
                           exportConfig.format === fmt 
                           ? 'bg-primary-600 border-primary-500 text-white shadow-lg shadow-primary-900/40' 
                           : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
                         }`}
                       >
+                        {fmt === 'bundle' && <Archive size={12} />}
                         {fmt}
                       </button>
                     ))}
@@ -317,6 +339,13 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
 
           </div>
         </div>
+      )}
+
+      {selectedActForLegal && (
+          <LegalDocumentModal 
+            act={selectedActForLegal} 
+            onClose={() => setSelectedActForLegal(null)} 
+          />
       )}
     </div>
   );

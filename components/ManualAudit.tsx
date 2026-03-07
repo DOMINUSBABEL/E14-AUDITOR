@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, AlertTriangle, Loader2, Microscope, Scale, Link as LinkIcon, Folder, CheckCircle, Globe } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Loader2, Microscope, Scale, Link as LinkIcon, Folder, CheckCircle, Globe, Download, Archive, FileJson } from 'lucide-react';
 import { analyzeElectionAct } from '../services/geminiService';
 import { AnalyzedAct, ForensicDetail } from '../types';
 import { POLITICAL_CONFIG } from '../constants';
 import RegistraduriaScraper from './RegistraduriaScraper';
+import LegalDocumentModal from './LegalDocumentModal';
 
 interface ManualAuditProps {
   onComplete?: (results: Partial<AnalyzedAct>[]) => void;
@@ -17,7 +18,34 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [results, setResults] = useState<Partial<AnalyzedAct>[]>([]);
+  const [selectedActForLegal, setSelectedActForLegal] = useState<AnalyzedAct | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleExportBatch = async (format: 'pdf' | 'json' | 'bundle') => {
+    if (results.length === 0) return;
+    
+    // Filter out successful results only for export tools
+    const successfulResults = results.filter(r => r.status !== 'failed') as AnalyzedAct[];
+    if (successfulResults.length === 0) return;
+
+    const columns = ['id', 'mesa', 'zona', 'total_calculated', 'total_declared', 'is_fraud', 'timestamp', 'strategic_intent', 'strategic_recommendation', 'forensic_summary'];
+    const fileName = `batch_audit_${new Date().toISOString().slice(0,10)}`;
+
+    const utils = await import('./DataLake.utils');
+
+    if (format === 'json') {
+        const blob = new Blob([JSON.stringify(successfulResults, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileName}.json`;
+        link.click();
+    } else if (format === 'pdf') {
+        utils.exportToPDF(successfulResults, columns, `${fileName}.pdf`);
+    } else if (format === 'bundle') {
+        utils.generateFullAnalysisBundle(successfulResults, columns, fileName);
+    }
+  };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -250,19 +278,48 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
       </div>
 
       {/* Right Column: Active Results */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto relative">
-        <h3 className="text-lg font-bold text-white mb-6 flex items-center">
-            <FileText className="mr-2 text-primary-500" />
-            Resultados del Análisis Forense
-        </h3>
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto relative flex flex-col">
+        <div className="flex justify-between items-center mb-6 shrink-0">
+            <h3 className="text-lg font-bold text-white flex items-center">
+                <FileText className="mr-2 text-primary-500" />
+                Resultados del Análisis Forense
+            </h3>
+            
+            {results.length > 0 && (
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => handleExportBatch('pdf')}
+                        className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700"
+                        title="Export Batch as PDF"
+                    >
+                        <Download size={16} />
+                    </button>
+                    <button 
+                        onClick={() => handleExportBatch('json')}
+                        className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700"
+                        title="Export Batch as JSON"
+                    >
+                        <FileJson size={16} />
+                    </button>
+                    <button 
+                        onClick={() => handleExportBatch('bundle')}
+                        className="p-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors shadow-lg shadow-primary-900/20"
+                        title="Download Analysis Bundle (ZIP)"
+                    >
+                        <Archive size={16} />
+                    </button>
+                </div>
+            )}
+        </div>
 
-        {!activeResult && !isProcessing && !error && (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-600 space-y-2 border border-slate-800/50 rounded-lg bg-slate-950/50 p-6 text-center">
-                <Scale size={48} className="text-slate-800 mb-4" />
-                <p>El motor forense está en espera.</p>
-                <p className="text-xs">Carga un lote de archivos locales o ingresa URLs para iniciar la extracción automatizada y validar la impugnabilidad.</p>
-            </div>
-        )}
+        <div className="flex-1 overflow-y-auto">
+            {!activeResult && !isProcessing && !error && (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-600 space-y-2 border border-slate-800/50 rounded-lg bg-slate-950/50 p-6 text-center">
+                    <Scale size={48} className="text-slate-800 mb-4" />
+                    <p>El motor forense está en espera.</p>
+                    <p className="text-xs">Carga un lote de archivos locales o ingresa URLs para iniciar la extracción automatizada y validar la impugnabilidad.</p>
+                </div>
+            )}
 
         {isProcessing && !activeResult && (
             <div className="space-y-4 animate-pulse">
@@ -316,6 +373,15 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                             <span className="text-xs bg-black/30 px-2 py-1 rounded border border-white/10">
                                 Confianza: {activeResult.document_integrity?.nivel_de_confianza || "Alta"}
                             </span>
+                            {activeResult.document_integrity?.estado === 'IMPUGNABLE' && (
+                                <button 
+                                    onClick={() => setSelectedActForLegal(activeResult as AnalyzedAct)}
+                                    className="text-xs bg-primary-600 hover:bg-primary-700 text-white px-3 py-1 rounded font-bold transition-colors flex items-center gap-1"
+                                >
+                                    <Scale size={14} />
+                                    Ver Análisis Jurídico
+                                </button>
+                            )}
                         </div>
                    </div>
                 </div>
@@ -413,7 +479,15 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                 )}
             </div>
         )}
+        </div>
       </div>
+
+      {selectedActForLegal && (
+          <LegalDocumentModal 
+            act={selectedActForLegal} 
+            onClose={() => setSelectedActForLegal(null)} 
+          />
+      )}
     </div>
   );
 };

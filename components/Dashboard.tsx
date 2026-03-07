@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { SystemMetrics, AnalyzedAct } from '../types';
-import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, FileText, Bell, Settings, X, Mail, MessageSquare, Scale, type LucideIcon } from 'lucide-react';
+import LegalDocumentModal from './LegalDocumentModal';
 
 interface MetricCardProps {
   title: string;
@@ -20,6 +21,7 @@ const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
 
 const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [selectedActForLegal, setSelectedActForLegal] = useState<AnalyzedAct | null>(null);
   const [alerts, setAlerts] = useState({
     email: true,
     sms: false,
@@ -198,7 +200,16 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
                     Calc: <span className="text-white">{act.total_calculated}</span> vs Decl: <span className="text-white">{act.total_declared}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-blue-400 hover:text-blue-300 text-xs underline">Review Image</button>
+                    <div className="flex items-center space-x-3">
+                        <button className="text-blue-400 hover:text-blue-300 text-xs underline">Review Image</button>
+                        <button 
+                            onClick={() => setSelectedActForLegal(act)}
+                            className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-1 rounded border border-slate-700 text-[10px] font-bold transition-colors"
+                        >
+                            <Scale size={12} className="text-primary-500" />
+                            <span>LEGAL</span>
+                        </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -213,6 +224,13 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
           </table>
         </div>
       </div>
+
+      {selectedActForLegal && (
+          <LegalDocumentModal 
+            act={selectedActForLegal} 
+            onClose={() => setSelectedActForLegal(null)} 
+          />
+      )}
 
       {/* Alert Configuration Modal */}
       {showConfigModal && (
