@@ -15,7 +15,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [exportConfig, setExportConfig] = useState({
     startDate: '',
     endDate: '',
-    format: 'csv' as 'csv' | 'xlsx' | 'json' | 'pdf' | 'bundle',
+    format: 'bundle' as 'csv' | 'xlsx' | 'json' | 'pdf' | 'bundle',
     targetParty: 'ALL',
     columns: {
       id: true,

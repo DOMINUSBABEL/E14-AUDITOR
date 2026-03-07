@@ -46,6 +46,18 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
         utils.generateFullAnalysisBundle(successfulResults, columns, fileName);
     }
   };
+
+  const handleExportSingleLegal = (act: AnalyzedAct) => {
+    import('./LegalUtils').then(utils => {
+      const template = utils.generateLegalTemplate(act);
+      const blob = new Blob([template], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `impugnacion_mesa_${act.mesa}.txt`;
+      link.click();
+    });
+  };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -374,13 +386,22 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                                 Confianza: {activeResult.document_integrity?.nivel_de_confianza || "Alta"}
                             </span>
                             {activeResult.document_integrity?.estado === 'IMPUGNABLE' && (
-                                <button 
-                                    onClick={() => setSelectedActForLegal(activeResult as AnalyzedAct)}
-                                    className="text-xs bg-primary-600 hover:bg-primary-700 text-white px-3 py-1 rounded font-bold transition-colors flex items-center gap-1"
-                                >
-                                    <Scale size={14} />
-                                    Ver Análisis Jurídico
-                                </button>
+                                <div className="flex gap-1">
+                                    <button 
+                                        onClick={() => setSelectedActForLegal(activeResult as AnalyzedAct)}
+                                        className="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded font-bold transition-colors flex items-center gap-1 border border-slate-700"
+                                    >
+                                        <Scale size={14} />
+                                        Ver Análisis
+                                    </button>
+                                    <button 
+                                        onClick={() => handleExportSingleLegal(activeResult as AnalyzedAct)}
+                                        className="text-xs bg-primary-600 hover:bg-primary-700 text-white px-3 py-1 rounded font-bold transition-colors flex items-center gap-1 shadow-lg shadow-primary-900/20"
+                                    >
+                                        <Download size={14} />
+                                        Exportar Minuta (.TXT)
+                                    </button>
+                                </div>
                             )}
                         </div>
                    </div>
