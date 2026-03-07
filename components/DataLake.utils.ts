@@ -58,7 +58,7 @@ export function exportToPDF(dataToExport: AnalyzedAct[], columns: string[], file
   const headers = columns.map(col => col.replace(/_/g, ' ').toUpperCase());
   const body = dataToExport.map(act => columns.map((_, j) => columnHandlers[j](act)));
 
-  doc.text("E-14 Real-Time Auditor - Reporte de Auditoría", 40, 40);
+  doc.text("AUDITOR.IA - Reporte de Auditoría", 40, 40);
   
   autoTable(doc, {
     head: [headers],

@@ -53,7 +53,7 @@ La presente acción se sustenta en el siguiente marco normativo vigente:
 IV. PRUEBAS
 
 1. DOCUMENTAL: Impresión de la captura digital del formulario E-14 analizado.
-2. PERICIAL TÉCNICA: Informe de análisis forense emitido por el sistema "E-14 Real-Time Auditor" donde se certifica el NIVEL DE CONFIANZA: ${act.document_integrity?.nivel_de_confianza || 'Bajo/Medio'} y la trazabilidad de la alteración detectada.
+2. PERICIAL TÉCNICA: Informe de análisis forense emitido por el sistema "AUDITOR.IA" donde se certifica el NIVEL DE CONFIANZA: ${act.document_integrity?.nivel_de_confianza || 'Bajo/Medio'} y la trazabilidad de la alteración detectada.
 3. COTEJO: Solicitud de exhibición del formulario E-14 original (Claveros) reposante en el arca triclave.
 
 V. NOTIFICACIONES

@@ -2,9 +2,9 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# 🗳️ E-14 Real-time Auditor
+# 🗳️ AUDITOR.IA
 
-**E-14 Real-time Auditor** is an advanced election auditing dashboard designed to visualize, monitor, and analyze electoral acts (such as E-14 forms) in real-time. It provides a robust pipeline for detecting anomalies, arithmetic fraud, and physical alterations (like erasures or amendments) on electoral documents using AI vision models.
+**AUDITOR.IA** is an advanced election auditing dashboard designed to visualize, monitor, and analyze electoral acts (such as E-14 forms) in real-time. It provides a robust pipeline for detecting anomalies, arithmetic fraud, and physical alterations (like erasures or amendments) on electoral documents using AI vision models.
 
 ## 📖 System Description
 

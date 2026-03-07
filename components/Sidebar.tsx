@@ -15,7 +15,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
           <ShieldCheck className="text-white w-6 h-6" />
         </div>
         <div>
-          <h1 className="font-bold text-white text-lg tracking-tight">AUDITOR<span className="text-primary-500">.AI</span></h1>
+          <h1 className="font-bold text-white text-lg tracking-tight">AUDITOR<span className="text-primary-500">.IA</span></h1>
           <p className="text-xs text-slate-400 font-mono">v2.0 Ryzen Core</p>
         </div>
       </div>
