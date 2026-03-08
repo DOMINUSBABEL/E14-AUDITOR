@@ -88,7 +88,12 @@ export const analyzeElectionAct = async (
     for (const modelName of MODELS) {
       try {
         console.log(`[GeminiService] Attempting analysis with ${modelName}...`);
-        const response = await client.models.generateContent({
+
+        // Timeout mechanism to prevent hanging indefinitely
+        const ac = new AbortController();
+        const timeoutId = setTimeout(() => ac.abort(), 45000); // 45 seconds timeout
+
+        const responsePromise = client.models.generateContent({
           model: modelName,
           contents: [{
             parts: [
@@ -114,9 +119,22 @@ export const analyzeElectionAct = async (
                 is_fraud: { type: Type.BOOLEAN },
                 forensic_analysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, description: { type: Type.STRING }, affected_party: { type: Type.STRING }, original_value_inferred: { type: Type.INTEGER, nullable: true }, final_value_legible: { type: Type.INTEGER }, confidence: { type: Type.NUMBER } } } }
               }
-            }
+            },
+            httpOptions: { signal: ac.signal }
           }
         });
+
+        let response;
+        try {
+            response = await responsePromise;
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                throw new Error("Timeout: Gemini API request took too long (45s)");
+            }
+            throw err;
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         const text = response.text;
         if (!text) continue;

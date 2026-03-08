@@ -94,33 +94,46 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
   };
 
   const getBase64FromUrl = async (url: string): Promise<{ base64: string, mimeType: string }> => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        resolve({
-          base64: result.split(',')[1],
-          mimeType: blob.type
-        });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for fetching URL
 
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve({
+            base64: result.split(',')[1],
+            mimeType: blob.type
+          });
+        };
+        reader.onerror = () => reject(new Error("Failed to read downloaded file."));
+        reader.readAsDataURL(blob);
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
   const getBase64FromFile = (file: File): Promise<{ base64: string, mimeType: string }> => {
     return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => reject(new Error("File read timeout after 15s")), 15000);
       const reader = new FileReader();
       reader.onloadend = () => {
+        clearTimeout(timeoutId);
         const result = reader.result as string;
         resolve({
           base64: result.split(',')[1],
           mimeType: file.type
         });
       };
-      reader.onerror = reject;
+      reader.onerror = () => {
+        clearTimeout(timeoutId);
+        reject(new Error("Failed to read local file."));
+      };
       reader.readAsDataURL(file);
     });
   };
