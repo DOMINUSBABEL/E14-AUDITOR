@@ -167,7 +167,7 @@ const App: React.FC = () => {
               {activeTab === 'data' && 'Data Lake (PocketBase)'}
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              {activeTab === 'dashboard' && 'Real-time monitoring of E-14 ingestion process.'}
+              {activeTab === 'dashboard' && 'Real-time monitoring of AUDITOR.IA ingestion process.'}
               {activeTab === 'live' && 'Visualizing ClawdBot -> Redis -> Ryzen -> PocketBase pipeline.'}
               {activeTab === 'audit' && 'Upload specific acts for deep-dive forensic analysis.'}
               {activeTab === 'data' && 'Historical records, export tools, and long-term storage view.'}

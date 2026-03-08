@@ -89,7 +89,7 @@ Atentamente,
 __________________________________________
 [NOMBRE DEL ABOGADO / APODERADO]
 T.P. No. ___________ del C.S. de la J.
-PROYECTADO POR: E-14 REAL-TIME AUDITOR - MÓDULO JURÍDICO CPACA
+PROYECTADO POR: AUDITOR.IA - MÓDULO JURÍDICO CPACA
 FECHA DE GENERACIÓN: ${date}
   `;
 };

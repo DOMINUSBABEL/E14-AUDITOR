@@ -202,7 +202,7 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                   <Upload size={24} />
                 </div>
                 <div>
-                  <h3 className="text-white font-medium">Cargar Formularios E-14</h3>
+                  <h3 className="text-white font-medium">Cargar Actas de Escrutinio</h3>
                   <p className="text-slate-500 text-sm mb-4">Selecciona archivos individuales o una carpeta entera</p>
                 </div>
                 
