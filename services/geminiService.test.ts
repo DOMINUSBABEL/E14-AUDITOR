@@ -75,7 +75,7 @@ describe("geminiService", () => {
                 intent: 'PERJUICIO',
                 impact_score: -10,
                 recommendation: 'IMPUGNAR',
-                legal_grounding: expect.stringContaining("Alteración de resultados electorales")
+                legal_grounding: expect.stringContaining("Alteración de resultados (Art. 192)")
             });
         });
 
@@ -94,7 +94,7 @@ describe("geminiService", () => {
                 intent: 'PERJUICIO',
                 impact_score: -10,
                 recommendation: 'IMPUGNAR',
-                legal_grounding: expect.stringContaining("Alteración de resultados electorales")
+                legal_grounding: expect.stringContaining("Alteración de resultados (Art. 192)")
             });
         });
     });
@@ -171,7 +171,7 @@ describe("geminiService", () => {
                 intent: 'PERJUICIO',
                 impact_score: -90, // +10 - 100 = -90
                 recommendation: 'IMPUGNAR',
-                legal_grounding: expect.stringContaining("Alteración de resultados electorales")
+                legal_grounding: expect.stringContaining("Alteración de resultados (Art. 192)")
             });
         });
     });
