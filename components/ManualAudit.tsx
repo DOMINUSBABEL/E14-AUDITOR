@@ -33,7 +33,7 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
     );
   };
 
-  const handleExportBatch = async (format: 'pdf' | 'json' | 'bundle') => {
+  const handleExportBatch = async (format: 'pdf' | 'json' | 'bundle' | 'docx') => {
     if (results.length === 0) return;
     
     // Filter out successful results only for export tools
@@ -56,6 +56,10 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
         utils.exportToPDF(successfulResults, columns, `${fileName}.pdf`);
     } else if (format === 'bundle') {
         utils.generateFullAnalysisBundle(successfulResults, columns, fileName);
+    } else if (format === 'docx') {
+        import('./LegalDocxUtils').then(docxUtils => {
+            docxUtils.generateLegalDocxReport(successfulResults, fileName);
+        });
     }
   };
 
@@ -396,6 +400,14 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                         title="Export Batch as JSON"
                     >
                         <FileJson size={16} />
+                    </button>
+                    <button
+                        onClick={() => handleExportBatch('docx')}
+                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700 flex items-center gap-1 text-xs font-bold"
+                        title="Export Legal Report (.DOCX)"
+                    >
+                        <FileText size={16} />
+                        DOCX
                     </button>
                     <button 
                         onClick={() => handleExportBatch('bundle')}

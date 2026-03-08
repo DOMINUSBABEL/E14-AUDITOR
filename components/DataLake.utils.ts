@@ -65,7 +65,7 @@ export function exportToPDF(dataToExport: AnalyzedAct[], columns: string[], file
     body: body,
     startY: 60,
     styles: { fontSize: 8 },
-    headStyles: { fillStyle: 'f', fillColor: [51, 65, 85] }
+    headStyles: { fillColor: [51, 65, 85] }
   });
 
   doc.save(fileName);
