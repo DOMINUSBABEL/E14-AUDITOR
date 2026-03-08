@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
-import { POLITICAL_CONFIG } from "../constants";
+import { POLITICAL_CONFIG, AI_CONFIG } from "../constants";
 
 let aiGemini: GoogleGenAI | null = null;
 let aiOpenAI: OpenAI | null = null;
@@ -24,14 +24,26 @@ const getOpenAIClient = () => {
   return aiOpenAI;
 }
 
-// Exclusive Flagship Model: 3.1 Pro (Highest quality for forensic analysis)
-const MODELS = ['gemini-3.1-pro-preview'];
+// Centralized AI configuration
+const MODELS = [AI_CONFIG.MODEL_NAME];
+
+interface AuditConfig {
+  clientParty: string;
+  rivalParties: string[];
+  autoDetect: boolean;
+}
 
 export const analyzeElectionAct = async (
   base64Image: string, 
   mimeType: string,
-  fileName?: string
+  fileName?: string,
+  config?: AuditConfig
 ): Promise<Partial<AnalyzedAct>> => {
+  const currentConfig = config || {
+    clientParty: POLITICAL_CONFIG.CLIENT_NAME,
+    rivalParties: POLITICAL_CONFIG.RIVALS,
+    autoDetect: true
+  };
   
   // PDF Size Check (Max 20MB for inlineData)
   const sizeInBytes = (base64Image.length * 3) / 4;
@@ -109,13 +121,24 @@ export const analyzeElectionAct = async (
         const text = response.text;
         if (!text) continue;
         
-        const data = JSON.parse(text);
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error("Failed to parse Gemini response");
+        }
 
         if (data.estado === "ERROR_DE_LECTURA") {
             throw new Error(data.conclusion || "Documento ilegible. ERROR_DE_LECTURA");
         }
 
-        const strategicAnalysis = runBusinessLogic(data.forensic_analysis, data.votes);
+        const strategicAnalysis = runBusinessLogic(
+          data.forensic_analysis,
+          data.votes,
+          currentConfig.clientParty,
+          currentConfig.rivalParties,
+          currentConfig.autoDetect
+        );
 
         return {
           ...data,
@@ -158,30 +181,77 @@ export const analyzeElectionAct = async (
         nivel_de_confianza: data.nivel_de_confianza,
         conclusion: data.conclusion
       },
-      strategic_analysis: runBusinessLogic(data.forensic_analysis, data.votes)
+      strategic_analysis: runBusinessLogic(
+          data.forensic_analysis,
+          data.votes,
+          currentConfig.clientParty,
+          currentConfig.rivalParties,
+          currentConfig.autoDetect
+      )
     };
   }
 };
 
-export function runBusinessLogic(forensics: ForensicDetail[] = [], votes: VoteCount[]): StrategicAnalysis {
-  const client = POLITICAL_CONFIG.CLIENT_NAME;
+export function runBusinessLogic(
+  forensics: ForensicDetail[] = [],
+  votes: VoteCount[],
+  clientParty: string = POLITICAL_CONFIG.CLIENT_NAME,
+  rivalParties: string[] = POLITICAL_CONFIG.RIVALS,
+  autoDetect: boolean = true
+): StrategicAnalysis {
   if (!forensics || forensics.length === 0) return { intent: 'NEUTRO', impact_score: 0, recommendation: 'VALIDAR' };
 
   let totalImpact = 0;
   let detectedIntent: 'BENEFICIO' | 'PERJUICIO' | 'NEUTRO' = 'NEUTRO';
+  let harmedParty: string | null = null;
+  let benefitedParty: string | null = null;
 
   for (const f of forensics) {
     const delta = (f.final_value_legible || 0) - (f.original_value_inferred || 0);
-    if (f.affected_party === client) {
-      if (delta < 0) { totalImpact -= Math.abs(delta); detectedIntent = 'PERJUICIO'; }
-      else { totalImpact += delta; if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO'; }
-    } else if (POLITICAL_CONFIG.RIVALS.includes(f.affected_party)) {
-      if (delta > 0) { totalImpact -= delta; detectedIntent = 'PERJUICIO'; }
-      else { totalImpact += Math.abs(delta); if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO'; }
+
+    // Auto-detect mode: anyone losing votes is harmed
+    if (autoDetect) {
+       // Only count as PERJUICIO if someone actually loses votes
+       if (delta < 0) {
+           totalImpact -= Math.abs(delta);
+           detectedIntent = 'PERJUICIO';
+           harmedParty = f.affected_party;
+       } else if (delta > 0) {
+           // Someone gained votes. In autoDetect, we don't assume this is a PERJUICIO
+           // for someone else unless we know who it is. We mark it as BENEFICIO for them.
+           totalImpact += delta;
+           if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO';
+           benefitedParty = f.affected_party;
+       }
+    } else {
+        // Targeted mode based on user selections
+        if (f.affected_party === clientParty) {
+          if (delta < 0) { totalImpact -= Math.abs(delta); detectedIntent = 'PERJUICIO'; }
+          else { totalImpact += delta; if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO'; }
+        } else if (rivalParties.includes(f.affected_party)) {
+          if (delta > 0) { totalImpact -= delta; detectedIntent = 'PERJUICIO'; }
+          else { totalImpact += Math.abs(delta); if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO'; }
+        }
     }
   }
 
-  if (detectedIntent === 'PERJUICIO') return { intent: 'PERJUICIO', impact_score: totalImpact, recommendation: 'IMPUGNAR', legal_grounding: 'Alteración de resultados (Art. 192).' };
-  if (detectedIntent === 'BENEFICIO') return { intent: 'BENEFICIO', impact_score: totalImpact, recommendation: 'RECONTEO', legal_grounding: 'Inconsistencia favorable.' };
+  if (detectedIntent === 'PERJUICIO') {
+    return {
+      intent: 'PERJUICIO',
+      impact_score: totalImpact,
+      recommendation: 'IMPUGNAR',
+      legal_grounding: 'Alteración de resultados (Art. 192).'
+    };
+  }
+
+  if (detectedIntent === 'BENEFICIO') {
+    return {
+      intent: 'BENEFICIO',
+      impact_score: totalImpact,
+      recommendation: 'RECONTEO',
+      legal_grounding: 'Inconsistencia favorable detectada'
+    };
+  }
+
   return { intent: 'NEUTRO', impact_score: 0, recommendation: 'VALIDAR' };
 }

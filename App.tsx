@@ -8,7 +8,7 @@ import { SystemMetrics, SystemLog, AnalyzedAct } from './types';
 import { INITIAL_METRICS, POLITICAL_CONFIG } from './constants';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('audit');
   const [metrics, setMetrics] = useState<SystemMetrics>(INITIAL_METRICS);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [acts, setActs] = useState<AnalyzedAct[]>([]);
