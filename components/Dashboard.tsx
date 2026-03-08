@@ -104,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ metrics, acts }) => {
         />
         <MetricCard 
           title="Impugnable %" 
-          value={acts.length > 0 ? `${((acts.filter(a => a.strategic_analysis?.recommendation === 'IMPUGNAR').length / acts.length) * 100).toFixed(1)}%` : '0%'} 
+          value={acts.length > 0 ? `${((acts.filter(a => a.strategic_analysis?.recommendation === 'IMPUGNAR').length / acts.length) * 100).toFixed(1)}%` : '0.0%'}
           icon={CheckCircle} 
           color="text-green-500" 
           sub="Legal Action Needed"

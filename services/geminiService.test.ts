@@ -60,7 +60,8 @@ describe("geminiService", () => {
         });
     });
 
-    describe("PERJUICIO scenarios", () => {
+    // Testing Targeted Mode (autoDetect = false)
+    describe("Targeted Mode: PERJUICIO scenarios", () => {
         it("should detect PERJUICIO when client votes are removed", () => {
              const forensics: ForensicDetail[] = [{
                 type: "TACHON",
@@ -70,7 +71,7 @@ describe("geminiService", () => {
                 final_value_legible: 40, // -10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics, [], POLITICAL_CONFIG.CLIENT_NAME, POLITICAL_CONFIG.RIVALS, false);
             expect(result).toEqual({
                 intent: 'PERJUICIO',
                 impact_score: -10,
@@ -89,7 +90,7 @@ describe("geminiService", () => {
                 final_value_legible: 20, // +10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics, [], POLITICAL_CONFIG.CLIENT_NAME, POLITICAL_CONFIG.RIVALS, false);
             expect(result).toEqual({
                 intent: 'PERJUICIO',
                 impact_score: -10,
@@ -99,7 +100,7 @@ describe("geminiService", () => {
         });
     });
 
-    describe("BENEFICIO scenarios", () => {
+    describe("Targeted Mode: BENEFICIO scenarios", () => {
         it("should detect BENEFICIO (RECONTEO) when client votes are added, regardless of STRICT_ETHICS", () => {
             // STRICT_ETHICS logic was removed, so this should return RECONTEO
             (POLITICAL_CONFIG as any).STRICT_ETHICS = false;
@@ -111,7 +112,7 @@ describe("geminiService", () => {
                 final_value_legible: 50, // +10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics, [], POLITICAL_CONFIG.CLIENT_NAME, POLITICAL_CONFIG.RIVALS, false);
             expect(result).toEqual({
                 intent: 'BENEFICIO',
                 impact_score: 10,
@@ -132,7 +133,7 @@ describe("geminiService", () => {
                 final_value_legible: 10, // -10 votes
                 confidence: 0.9
             }];
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics, [], POLITICAL_CONFIG.CLIENT_NAME, POLITICAL_CONFIG.RIVALS, false);
             expect(result).toEqual({
                 intent: 'BENEFICIO',
                 impact_score: 10,
@@ -142,7 +143,7 @@ describe("geminiService", () => {
         });
     });
 
-    describe("Mixed scenarios", () => {
+    describe("Targeted Mode: Mixed scenarios", () => {
         it("should prioritize PERJUICIO over BENEFICIO", () => {
              const rival = POLITICAL_CONFIG.RIVALS[0];
              const forensics: ForensicDetail[] = [
@@ -166,10 +167,30 @@ describe("geminiService", () => {
                 }
             ];
 
-            const result = runBusinessLogic(forensics, []);
+            const result = runBusinessLogic(forensics, [], POLITICAL_CONFIG.CLIENT_NAME, POLITICAL_CONFIG.RIVALS, false);
             expect(result).toEqual({
                 intent: 'PERJUICIO',
                 impact_score: -90, // +10 - 100 = -90
+                recommendation: 'IMPUGNAR',
+                legal_grounding: expect.stringContaining("Alteración de resultados (Art. 192)")
+            });
+        });
+    });
+
+    describe("Auto-detect mode", () => {
+        it("should mark losing votes as PERJUICIO regardless of party", () => {
+             const forensics: ForensicDetail[] = [{
+                type: "TACHON",
+                description: "Votes removed",
+                affected_party: "Cualquier Partido",
+                original_value_inferred: 50,
+                final_value_legible: 40, // -10 votes
+                confidence: 0.9
+            }];
+            const result = runBusinessLogic(forensics, [], "", [], true);
+            expect(result).toEqual({
+                intent: 'PERJUICIO',
+                impact_score: -10,
                 recommendation: 'IMPUGNAR',
                 legal_grounding: expect.stringContaining("Alteración de resultados (Art. 192)")
             });

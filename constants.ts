@@ -1,11 +1,18 @@
 import { ChartColumn, Server, Database, BrainCircuit, Scale } from 'lucide-react';
 
 export const NAV_ITEMS = [
+  { id: 'audit', label: 'Forensic Audit', icon: BrainCircuit },
   { id: 'dashboard', label: 'Control Center', icon: ChartColumn },
   { id: 'live', label: 'Architecture & Logs', icon: Server },
-  { id: 'audit', label: 'Forensic Audit', icon: BrainCircuit },
   { id: 'data', label: 'Data Lake', icon: Database },
 ];
+
+// AI Configuration
+export const AI_CONFIG = {
+  MODEL_NAME: typeof process !== 'undefined' && process.env.GEMINI_MODEL
+    ? process.env.GEMINI_MODEL
+    : 'gemini-2.5-flash-latest'
+};
 
 export const MOCK_PARTIES = [
   "Pacto Histórico", "Centro Democrático", "Partido Liberal", "Partido Verde", "Cambio Radical"

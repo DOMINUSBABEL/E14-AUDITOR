@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, AlertTriangle, Loader2, Microscope, Scale, Link as LinkIcon, Folder, CheckCircle, Globe, Download, Archive, FileJson } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Loader2, Microscope, Scale, Link as LinkIcon, Folder, CheckCircle, Globe, Download, Archive, FileJson, Settings2 } from 'lucide-react';
 import { analyzeElectionAct } from '../services/geminiService';
 import { AnalyzedAct, ForensicDetail } from '../types';
-import { POLITICAL_CONFIG } from '../constants';
+import { POLITICAL_CONFIG, MOCK_PARTIES } from '../constants';
 import RegistraduriaScraper from './RegistraduriaScraper';
 import LegalDocumentModal from './LegalDocumentModal';
 
@@ -20,6 +20,18 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
   const [results, setResults] = useState<Partial<AnalyzedAct>[]>([]);
   const [selectedActForLegal, setSelectedActForLegal] = useState<AnalyzedAct | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Configuration State
+  const [showConfig, setShowConfig] = useState(false);
+  const [clientParty, setClientParty] = useState(POLITICAL_CONFIG.CLIENT_NAME);
+  const [rivalParties, setRivalParties] = useState<string[]>(POLITICAL_CONFIG.RIVALS);
+  const [autoDetect, setAutoDetect] = useState(true);
+
+  const handleRivalToggle = (party: string) => {
+    setRivalParties(prev =>
+      prev.includes(party) ? prev.filter(p => p !== party) : [...prev, party]
+    );
+  };
 
   const handleExportBatch = async (format: 'pdf' | 'json' | 'bundle') => {
     if (results.length === 0) return;
@@ -142,9 +154,18 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
       const item = itemsToProcess[i];
       try {
         const { base64, mimeType } = await item.getData();
-        const analysis = await analyzeElectionAct(base64, mimeType, item.source);
+        const analysis = await analyzeElectionAct(base64, mimeType, item.source, {
+          clientParty,
+          rivalParties,
+          autoDetect
+        });
         setResults(prev => [...prev, analysis]);
         finalResults.push(analysis);
+
+        // Small delay between requests to avoid rate limits, especially for flash models
+        if (i < itemsToProcess.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       } catch (err: any) {
         console.error(`Error processing ${item.source}:`, err);
         const failResult: Partial<AnalyzedAct> = { 
@@ -174,6 +195,69 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
       {/* Left Column: Upload & Queue */}
       <div className="space-y-6 flex flex-col">
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          {/* Header Controls */}
+          <div className="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center">
+             <div>
+                <h3 className="text-white font-bold flex items-center gap-2">
+                    <Microscope className="text-primary-500" size={18} />
+                    Motor de Análisis Forense
+                </h3>
+             </div>
+             <button
+                onClick={() => setShowConfig(!showConfig)}
+                className={`p-2 rounded-lg border transition-colors ${showConfig ? 'bg-primary-900/30 border-primary-500/50 text-primary-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'}`}
+                title="Configurar Lógica de Impacto"
+             >
+                <Settings2 size={16} />
+             </button>
+          </div>
+
+          {showConfig && (
+            <div className="bg-slate-900 border-b border-slate-800 p-4 space-y-4 text-sm animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between bg-slate-950 p-3 rounded border border-slate-800">
+                    <div>
+                        <span className="text-white font-medium block">Auto-detectar Perjudicado (IA)</span>
+                        <span className="text-xs text-slate-500">El sistema determinará a quién le conviene impugnar basándose en quién perdió votos, sin importar el partido.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={autoDetect} onChange={(e) => setAutoDetect(e.target.checked)} className="sr-only peer" />
+                        <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                    </label>
+                </div>
+
+                {!autoDetect && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mi Partido (Cliente)</label>
+                            <select
+                                value={clientParty}
+                                onChange={(e) => setClientParty(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-lg p-2.5 focus:border-primary-500 focus:outline-none"
+                            >
+                                {MOCK_PARTIES.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rivales Principales</label>
+                            <div className="bg-slate-950 border border-slate-800 rounded-lg p-2 max-h-32 overflow-y-auto space-y-1">
+                                {MOCK_PARTIES.filter(p => p !== clientParty).map(p => (
+                                    <label key={p} className="flex items-center gap-2 text-slate-300 text-xs cursor-pointer p-1 hover:bg-slate-900 rounded">
+                                        <input
+                                            type="checkbox"
+                                            checked={rivalParties.includes(p)}
+                                            onChange={() => handleRivalToggle(p)}
+                                            className="rounded border-slate-700 text-primary-600 bg-slate-900 focus:ring-primary-600 focus:ring-offset-slate-900"
+                                        />
+                                        {p}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+          )}
+
           <div className="flex border-b border-slate-800">
             <button 
               className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 ${activeTab === 'upload' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}

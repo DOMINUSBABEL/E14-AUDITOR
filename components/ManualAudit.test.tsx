@@ -15,6 +15,14 @@ mock.module('lucide-react', () => ({
   Microscope: () => <div data-testid="icon-microscope" />,
   Gavel: () => <div data-testid="icon-gavel" />,
   Scale: () => <div data-testid="icon-scale" />,
+  Link: () => <div data-testid="icon-link" />,
+  Folder: () => <div data-testid="icon-folder" />,
+  CheckCircle: () => <div data-testid="icon-check-circle" />,
+  Globe: () => <div data-testid="icon-globe" />,
+  Download: () => <div data-testid="icon-download" />,
+  Archive: () => <div data-testid="icon-archive" />,
+  FileJson: () => <div data-testid="icon-file-json" />,
+  Settings2: () => <div data-testid="icon-settings" />,
 }));
 
 // Mock Gemini Service
@@ -59,18 +67,18 @@ describe('ManualAudit Component', () => {
   it('renders initial state correctly', () => {
     const { getByText, getByTestId } = render(<ManualAudit />);
 
-    expect(getByText('Upload E-14 Form')).toBeTruthy();
-    expect(getByText('Select Image')).toBeTruthy();
-    expect(getByText('No data extracted yet.')).toBeTruthy();
+    expect(getByText('Cargar Actas de Escrutinio')).toBeTruthy();
+    expect(getByText('Seleccionar Archivos')).toBeTruthy();
+    expect(getByText('El motor forense está en espera.')).toBeTruthy();
 
-    const runButton = getByText('Run Audit').closest('button');
+    const runButton = getByText('Iniciar Flujo de Auditoría').closest('button');
     expect((runButton as HTMLButtonElement).disabled).toBe(true);
 
     expect(getByTestId('icon-upload')).toBeTruthy();
   });
 
-  it('handles file selection and shows preview', async () => {
-    const { getByText, getByAltText, container } = render(<ManualAudit />);
+  it('handles file selection and shows queued status', async () => {
+    const { getByText, container } = render(<ManualAudit />);
 
     const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
@@ -78,30 +86,10 @@ describe('ManualAudit Component', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => {
-        expect(getByAltText('Act Preview')).toBeTruthy();
+        expect(getByText('1 archivos cargados en cola listos para procesar.')).toBeTruthy();
     });
 
-    const runButton = getByText('Run Audit').closest('button');
+    const runButton = getByText('Iniciar Flujo de Auditoría').closest('button');
     expect((runButton as HTMLButtonElement).disabled).toBe(false);
-
-    expect(getByText('✕')).toBeTruthy();
-  });
-
-  it('clears file and results on reset', async () => {
-    const { getByText, queryByAltText, getByAltText, container } = render(<ManualAudit />);
-
-    const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [file] } });
-
-    await waitFor(() => {
-         expect(getByAltText('Act Preview')).toBeTruthy();
-    });
-
-    const closeBtn = getByText('✕');
-    fireEvent.click(closeBtn);
-
-    expect(queryByAltText('Act Preview')).toBeNull();
-    expect(getByText('Upload E-14 Form')).toBeTruthy();
   });
 });

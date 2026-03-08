@@ -36,10 +36,10 @@ mock.module('recharts', () => {
 // Do not mock internal components globally in integration tests
 
 describe('App Component', () => {
-  it('renders sidebar and dashboard by default', () => {
+  it('renders sidebar and audit by default', () => {
     const { getByTestId } = render(<App />);
     expect(getByTestId('sidebar')).toBeTruthy();
-    expect(getByTestId('dashboard')).toBeTruthy();
+    expect(getByTestId('manual-audit')).toBeTruthy();
   });
 
   it('switches to Live Monitor when tab is clicked', async () => {
@@ -76,8 +76,14 @@ describe('App Component', () => {
   it('updates header text based on active tab', async () => {
       const { getByText } = render(<App />);
 
-      // Default Dashboard
-      expect(getByText('Control Center')).toBeTruthy();
+      // Default Audit
+      expect(getByText('Manual Forensic Audit')).toBeTruthy();
+
+      // Dashboard
+      fireEvent.click(getByText('Dashboard'));
+      await waitFor(() => {
+          expect(getByText('Control Center')).toBeTruthy();
+      });
 
       // Live
       fireEvent.click(getByText('Live'));
