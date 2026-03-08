@@ -110,10 +110,21 @@ export const analyzeElectionAct = async (
         if (!text) continue;
         
         const data = JSON.parse(text);
+
+        if (data.estado === "ERROR_DE_LECTURA") {
+            throw new Error(data.conclusion || "Documento ilegible. ERROR_DE_LECTURA");
+        }
+
         const strategicAnalysis = runBusinessLogic(data.forensic_analysis, data.votes);
 
         return {
           ...data,
+          document_integrity: {
+            estado: data.estado,
+            hallazgos: data.hallazgos,
+            nivel_de_confianza: data.nivel_de_confianza,
+            conclusion: data.conclusion
+          },
           strategic_analysis: strategicAnalysis,
           isoTimestamp: new Date().toISOString(),
           timestamp: new Date().toLocaleTimeString()
@@ -134,7 +145,21 @@ export const analyzeElectionAct = async (
       messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Image}` } }] }]
     });
     const data = JSON.parse(response.choices[0].message.content || '{}');
-    return { ...data, strategic_analysis: runBusinessLogic(data.forensic_analysis, data.votes) };
+
+    if (data.estado === "ERROR_DE_LECTURA") {
+        throw new Error(data.conclusion || "Documento ilegible. ERROR_DE_LECTURA");
+    }
+
+    return {
+      ...data,
+      document_integrity: {
+        estado: data.estado,
+        hallazgos: data.hallazgos,
+        nivel_de_confianza: data.nivel_de_confianza,
+        conclusion: data.conclusion
+      },
+      strategic_analysis: runBusinessLogic(data.forensic_analysis, data.votes)
+    };
   }
 };
 
