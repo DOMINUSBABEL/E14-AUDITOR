@@ -88,10 +88,9 @@ export async function generateFullAnalysisBundle(dataToExport: AnalyzedAct[], co
   const legalFolder = zip.folder("analisis_juridico");
   if (legalFolder) {
     dataToExport.forEach(act => {
-      if (act.is_fraud || act.document_integrity?.estado === 'IMPUGNABLE') {
-        const template = generateLegalTemplate(act);
-        legalFolder.file(`impugnacion_mesa_${act.mesa}.txt`, template);
-      }
+      const template = generateLegalTemplate(act);
+      const suffix = (act.is_fraud || act.document_integrity?.estado === 'IMPUGNABLE') ? 'IMPUGNACION' : 'VALIDO';
+      legalFolder.file(`${suffix}_mesa_${act.mesa}.txt`, template);
     });
   }
   

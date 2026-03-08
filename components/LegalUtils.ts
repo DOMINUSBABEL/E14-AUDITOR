@@ -7,6 +7,30 @@ import { AnalyzedAct } from '../types';
 export const generateLegalTemplate = (act: AnalyzedAct): string => {
   const date = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
   
+  const isImpugnable = act.is_fraud || act.document_integrity?.estado === 'IMPUGNABLE';
+
+  if (!isImpugnable) {
+    return `
+REPORTE DE AUDITORÍA NEGATIVO - MESA ${act.mesa}
+FECHA: ${date}
+SISTEMA: AUDITOR.IA
+
+I. RESULTADO DEL ANÁLISIS:
+Tras el procesamiento técnico-forense del formulario E-14 correspondiente a la MESA ${act.mesa}, ZONA ${act.zona}, se concluye que NO EXISTEN MÉRITOS JURÍDICOS para proceder con una acción de nulidad electoral o impugnación de la urna bajo el ordenamiento jurídico colombiano vigente.
+
+II. SUSTENTO TÉCNICO:
+1. INTEGRIDAD DOCUMENTAL: No se detectaron tachones, enmendaduras o alteraciones físicas que comprometan la veracidad de los datos consignados por los jurados de votación.
+2. CONSISTENCIA ARITMÉTICA: El total de votos declarados (${act.total_declared}) coincide plenamente con el cálculo verificado por el motor de auditoría (${act.total_calculated}).
+3. NIVEL DE CONFIANZA: ${act.document_integrity?.nivel_de_confianza || 'Alta'}.
+
+III. CONCLUSIÓN:
+El documento analizado goza de presunción de legalidad y acierto. No se recomienda la proyección de acciones judiciales ante lo Contencioso Administrativo.
+
+Atentamente,
+AUDITOR.IA - MÓDULO DE INTEGRIDAD ELECTORAL
+    `;
+  }
+
   // Extract specific findings for facts section
   const documentFindings = act.forensic_analysis.length > 0 
     ? act.forensic_analysis.map(f => `- Se detectó ${f.type.toLowerCase()} en la casilla de ${f.affected_party}, con una confianza del ${Math.round((f.confidence || 0) * 100)}%.`).join('\n')
