@@ -37,11 +37,14 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
     return Array.from(pSet).sort();
   }, [acts]);
 
-  const filteredActs = useMemo(() => acts.filter(act =>
-    act.mesa.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    act.zona.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    act.id.includes(searchTerm)
-  ), [acts, searchTerm]);
+  const filteredActs = useMemo(() => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return acts.filter(act =>
+      act.mesa.toLowerCase().includes(lowerSearchTerm) ||
+      act.zona.toLowerCase().includes(lowerSearchTerm) ||
+      act.id.includes(searchTerm)
+    );
+  }, [acts, searchTerm]);
 
   const downloadBlob = (blob: Blob, fileName: string) => {
     const url = URL.createObjectURL(blob);
