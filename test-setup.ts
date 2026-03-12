@@ -1,11 +1,45 @@
-import { GlobalRegistrator } from '@happy-dom/global-registrator';
-GlobalRegistrator.register();
+let GlobalRegistrator: any;
+try {
+    GlobalRegistrator = require('@happy-dom/global-registrator').GlobalRegistrator;
+    GlobalRegistrator.register();
+} catch (e) {
+    // console.warn('Happy-dom not available');
+}
 
 import { afterEach, mock } from 'bun:test';
-import { cleanup } from '@testing-library/react';
+let cleanup: any = () => {};
+try {
+    cleanup = require('@testing-library/react').cleanup;
+} catch (e) {
+    // console.warn('testing-library/react not available');
+}
 
 // Set dummy API key for testing
 process.env.GEMINI_API_KEY = 'dummy-key-for-testing';
+
+// Mock openai
+mock.module('openai', () => {
+    return {
+        default: class {
+            chat = {
+                completions: {
+                    create: mock(() => Promise.resolve({ choices: [{ message: { content: '{}' } }] }))
+                }
+            }
+        }
+    };
+});
+
+// Mock lucide-react
+mock.module('lucide-react', () => {
+    return {
+        ChartColumn: () => null,
+        Server: () => null,
+        Database: () => null,
+        BrainCircuit: () => null,
+        Scale: () => null
+    };
+});
 
 // Mock GoogleGenAI globally to prevent initialization errors
 mock.module('@google/genai', () => {
