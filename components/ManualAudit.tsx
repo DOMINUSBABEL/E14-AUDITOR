@@ -151,42 +151,49 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
       return;
     }
 
-    const finalResults: Partial<AnalyzedAct>[] = [];
+    const finalResults: Partial<AnalyzedAct>[] = new Array(itemsToProcess.length);
+    const CONCURRENCY = 3;
+    let nextIndex = 0;
 
-    for (let i = 0; i < itemsToProcess.length; i++) {
-      setCurrentIndex(i);
-      const item = itemsToProcess[i];
-      try {
-        const { base64, mimeType } = await item.getData();
-        const analysis = await analyzeElectionAct(base64, mimeType, item.source, {
-          clientParty,
-          rivalParties,
-          autoDetect
-        });
-        setResults(prev => [...prev, analysis]);
-        finalResults.push(analysis);
+    const worker = async () => {
+      while (nextIndex < itemsToProcess.length) {
+        const i = nextIndex++;
+        const item = itemsToProcess[i];
+        if (!item) break;
 
-        // Small delay between requests to avoid rate limits, especially for flash models
-        if (i < itemsToProcess.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+          const { base64, mimeType } = await item.getData();
+          const analysis = await analyzeElectionAct(base64, mimeType, item.source, {
+            clientParty,
+            rivalParties,
+            autoDetect
+          });
+          setResults(prev => [...prev, analysis]);
+          finalResults[i] = analysis;
+        } catch (err: any) {
+          console.error(`Error processing ${item.source}:`, err);
+          const failResult: Partial<AnalyzedAct> = {
+            archivo_analizado: item.source,
+            status: 'failed',
+            document_integrity: {
+              estado: 'ERROR_DE_LECTURA',
+              hallazgos: [`Error: ${err.message || 'Error desconocido'}`],
+              nivel_de_confianza: 'Bajo',
+              conclusion: `Falló la extracción: ${err.message || 'Error de la API de Gemini'}`
+            },
+            mesa: 'UNKNOWN', zona: 'UNKNOWN', votes: [], total_calculated: 0, total_declared: 0, is_fraud: false, forensic_analysis: []
+          };
+          setResults(prev => [...prev, failResult]);
+          finalResults[i] = failResult;
         }
-      } catch (err: any) {
-        console.error(`Error processing ${item.source}:`, err);
-        const failResult: Partial<AnalyzedAct> = { 
-          archivo_analizado: item.source, 
-          status: 'failed',
-          document_integrity: { 
-            estado: 'ERROR_DE_LECTURA', 
-            hallazgos: [`Error: ${err.message || 'Error desconocido'}`], 
-            nivel_de_confianza: 'Bajo', 
-            conclusion: `Falló la extracción: ${err.message || 'Error de la API de Gemini'}` 
-          },
-          mesa: 'UNKNOWN', zona: 'UNKNOWN', votes: [], total_calculated: 0, total_declared: 0, is_fraud: false, forensic_analysis: []
-        };
-        setResults(prev => [...prev, failResult]);
-        finalResults.push(failResult);
       }
-    }
+    };
+
+    const workers = Array(Math.min(CONCURRENCY, itemsToProcess.length))
+      .fill(null)
+      .map(() => worker());
+
+    await Promise.all(workers);
 
     if (onComplete) onComplete(finalResults);
     setIsProcessing(false);
@@ -337,7 +344,7 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
               {isProcessing && (
                 <span className="flex items-center gap-2">
                   <Loader2 size={16} className="animate-spin text-primary-500" />
-                  Procesando: {currentIndex + 1} / {(activeTab === 'upload' ? files.length : urls.split('\n').filter(u=>u.trim()!=='').length)}
+                  Auditando: {results.length} / {(activeTab === 'upload' ? files.length : urls.split('\n').filter(u=>u.trim()!=='').length)}
                 </span>
               )}
             </div>
