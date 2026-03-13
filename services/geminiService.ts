@@ -20,7 +20,7 @@ const getOpenAIClient = () => {
   if (aiOpenAI) return aiOpenAI;
   const baseURL = process.env.VITE_OPENAI_BASE_URL || 'http://localhost:11434/v1';
   const apiKey = process.env.VITE_OPENAI_API_KEY || 'ollama';
-  aiOpenAI = new OpenAI({ baseURL, apiKey, dangerouslyAllowBrowser: true });
+  aiOpenAI = new OpenAI({ baseURL, apiKey });
   return aiOpenAI;
 }
 
