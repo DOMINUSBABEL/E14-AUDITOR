@@ -6,6 +6,7 @@ import ManualAudit from './components/ManualAudit';
 import DataLake from './components/DataLake';
 import { SystemMetrics, SystemLog, AnalyzedAct } from './types';
 import { INITIAL_METRICS, POLITICAL_CONFIG } from './constants';
+import { generateSecureId, getRandomInt, getSecureRandom } from './services/cryptoUtils';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -16,14 +17,14 @@ const App: React.FC = () => {
   // Initialize with some mock data so the table isn't empty
   useEffect(() => {
     const initialActs: AnalyzedAct[] = Array.from({ length: 50 }).map((_, i) => {
-      const isFraud = Math.random() > 0.8;
+      const isFraud = getSecureRandom() > 0.8;
       const date = new Date();
-      date.setMinutes(date.getMinutes() - Math.floor(Math.random() * 10000));
+      date.setMinutes(date.getMinutes() - getRandomInt(0, 10000));
       
       return {
-        id: Math.random().toString(36).substr(2, 9),
-        mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
-        zona: `ZONA-${Math.floor(1 + Math.random() * 20).toString().padStart(2, '0')}`,
+        id: generateSecureId(),
+        mesa: `MESA-${getRandomInt(1000, 9999)}`,
+        zona: `ZONA-${getRandomInt(1, 20).toString().padStart(2, '0')}`,
         votes: [],
         total_calculated: 100,
         total_declared: isFraud ? 120 : 100,
@@ -57,10 +58,10 @@ const App: React.FC = () => {
       // Simulate fluctuation
       setMetrics(prev => ({
         ...prev,
-        queueSize: Math.max(0, prev.queueSize + Math.floor(Math.random() * 200) - 150), // Influx vs Processed
-        totalProcessed: prev.totalProcessed + Math.floor(Math.random() * 10),
-        fraudDetected: prev.fraudDetected + (Math.random() > 0.95 ? 1 : 0),
-        cpuLoad: 70 + Math.random() * 25,
+        queueSize: Math.max(0, prev.queueSize + getRandomInt(0, 200) - 150), // Influx vs Processed
+        totalProcessed: prev.totalProcessed + getRandomInt(0, 10),
+        fraudDetected: prev.fraudDetected + (getSecureRandom() > 0.95 ? 1 : 0),
+        cpuLoad: 70 + getSecureRandom() * 25,
       }));
 
       // Generate random log
@@ -72,10 +73,10 @@ const App: React.FC = () => {
         { source: 'PocketBase', msg: 'Record synced', type: 'success' },
       ];
 
-      if (Math.random() > 0.6) {
-        const randomLog = logTypes[Math.floor(Math.random() * logTypes.length)];
+      if (getSecureRandom() > 0.6) {
+        const randomLog = logTypes[getRandomInt(0, logTypes.length - 1)];
         const newLog: SystemLog = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: generateSecureId(),
           timestamp: new Date().toLocaleTimeString(),
           message: randomLog.msg,
           type: randomLog.type,
@@ -85,13 +86,13 @@ const App: React.FC = () => {
       }
 
       // Occasionally add a fake act to the list
-      if (Math.random() > 0.95) {
-        const isFraud = Math.random() > 0.9;
+      if (getSecureRandom() > 0.95) {
+        const isFraud = getSecureRandom() > 0.9;
         const now = new Date();
         const newAct: AnalyzedAct = {
-          id: Math.random().toString(36).substr(2, 9),
-          mesa: `MESA-${Math.floor(1000 + Math.random() * 9000)}`,
-          zona: `ZONA-${Math.floor(1 + Math.random() * 20).toString().padStart(2, '0')}`,
+          id: generateSecureId(),
+          mesa: `MESA-${getRandomInt(1000, 9999)}`,
+          zona: `ZONA-${getRandomInt(1, 20).toString().padStart(2, '0')}`,
           votes: [],
           total_calculated: 100,
           total_declared: isFraud ? 120 : 100,
