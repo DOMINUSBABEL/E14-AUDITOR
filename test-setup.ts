@@ -4,6 +4,7 @@ import { cleanup } from '@testing-library/react';
 
 // Set dummy API key for testing
 process.env.API_KEY = 'dummy-key-for-testing';
+process.env.GEMINI_MODEL = 'gemini-2.5-flash-latest';
 
 GlobalRegistrator.register();
 

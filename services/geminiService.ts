@@ -1,11 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalyzedAct, ForensicDetail, StrategicAnalysis, VoteCount } from "../types";
-import { POLITICAL_CONFIG } from "../constants";
+import { POLITICAL_CONFIG, AI_CONFIG } from "../constants";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const MODEL_NAME = 'gemini-2.5-flash-latest'; // Using Flash for speed/vision
 
 export const analyzeElectionAct = async (
   base64Image: string, 
@@ -28,7 +26,7 @@ export const analyzeElectionAct = async (
     `;
 
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: AI_CONFIG.MODEL_NAME,
       contents: {
         parts: [
           {

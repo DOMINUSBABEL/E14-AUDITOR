@@ -18,6 +18,10 @@ export const POLITICAL_CONFIG = {
   STRICT_ETHICS: false // If true, report even positive manipulation. If false, SILENT_LOG positive ones.
 };
 
+export const AI_CONFIG = {
+  MODEL_NAME: process.env.GEMINI_MODEL || 'gemini-2.5-flash-latest'
+};
+
 // Mock Database of Lawyers per Party (Tenant System)
 export const LAWYERS_DB: Record<string, { name: string; phone: string }> = {
   "Pacto Histórico": { name: "Dr. Gustavo Bolívar", phone: "+57 300 111 2233" },
