@@ -75,18 +75,23 @@ const RegistraduriaScraper: React.FC<RegistraduriaScraperProps> = ({ onImageFoun
         const folderPath = `${selectedDept}/${selectedMun}/${selectedPuesto}`;
         const folder = zip.folder(folderPath);
 
-        for (let i = 0; i < targetTables.length; i++) {
-            const t = targetTables[i];
+        let completedCount = 0;
+        const fetchTasks = targetTables.map(async (t) => {
             const url = t.u || `https://cdn-e14.registraduria.gov.co/2023/${selectedCorp}/${t.id}.jpg`;
             try {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const blob = await response.blob();
                 folder?.file(`Mesa_${t.n}.jpg`, blob);
             } catch (err) {
-                console.warn(`Could not download table ${t.n}`);
+                console.warn(`Could not download table ${t.n}`, err);
+            } finally {
+                completedCount++;
+                setExportProgress(Math.round((completedCount / targetTables.length) * 100));
             }
-            setExportProgress(Math.round(((i + 1) / targetTables.length) * 100));
-        }
+        });
+
+        await Promise.all(fetchTasks);
 
         const content = await zip.generateAsync({ type: "blob" });
         const link = document.createElement("a");
