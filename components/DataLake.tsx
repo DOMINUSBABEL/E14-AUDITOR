@@ -4,6 +4,31 @@ import { Download, Search, Calendar, Filter, Database, FileSpreadsheet, X, Scale
 import { generateCSVChunks } from './DataLake.utils';
 import LegalDocumentModal from './LegalDocumentModal';
 
+type ExportFormat = 'csv' | 'xlsx' | 'json' | 'pdf' | 'bundle';
+
+interface ExportColumns {
+  id: boolean;
+  mesa: boolean;
+  zona: boolean;
+  total_calculated: boolean;
+  total_declared: boolean;
+  is_fraud: boolean;
+  timestamp: boolean;
+  strategic_intent: boolean;
+  strategic_recommendation: boolean;
+  forensic_summary: boolean;
+}
+
+interface ExportConfig {
+  startDate: string;
+  endDate: string;
+  format: ExportFormat;
+  targetParty: string;
+  columns: ExportColumns;
+}
+
+const EXPORT_FORMATS: ExportFormat[] = ['csv', 'xlsx', 'json', 'pdf', 'bundle'];
+
 interface DataLakeProps {
   acts: AnalyzedAct[];
 }
@@ -12,10 +37,10 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedActForLegal, setSelectedActForLegal] = useState<AnalyzedAct | null>(null);
-  const [exportConfig, setExportConfig] = useState({
+  const [exportConfig, setExportConfig] = useState<ExportConfig>({
     startDate: '',
     endDate: '',
-    format: 'bundle' as 'csv' | 'xlsx' | 'json' | 'pdf' | 'bundle',
+    format: 'bundle',
     targetParty: 'ALL',
     columns: {
       id: true,
@@ -241,10 +266,10 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-400 uppercase tracking-wider block">Format</label>
                   <div className="flex flex-wrap gap-2">
-                    {['csv', 'xlsx', 'json', 'pdf', 'bundle'].map(fmt => (
+                    {EXPORT_FORMATS.map(fmt => (
                       <button 
                         key={fmt}
-                        onClick={() => setExportConfig({...exportConfig, format: fmt as any})}
+                        onClick={() => setExportConfig({...exportConfig, format: fmt})}
                         className={`flex-1 min-w-[60px] py-2 rounded-lg border font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1 ${
                           exportConfig.format === fmt 
                           ? 'bg-primary-600 border-primary-500 text-white shadow-lg shadow-primary-900/40' 
@@ -301,13 +326,11 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
                   <Filter className="mr-2" size={16} /> Select Columns
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {Object.keys(exportConfig.columns).map((col) => (
+                  {(Object.keys(exportConfig.columns) as Array<keyof ExportColumns>).map((col) => (
                     <label key={col} className="flex items-center space-x-3 p-3 bg-slate-950 rounded border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input 
                         type="checkbox" 
-                        // @ts-ignore
                         checked={exportConfig.columns[col]} 
-                        // @ts-ignore
                         onChange={e => setExportConfig({...exportConfig, columns: {...exportConfig.columns, [col]: e.target.checked}})}
                         className="rounded border-slate-700 bg-slate-800 text-primary-600 focus:ring-primary-600" 
                       />
