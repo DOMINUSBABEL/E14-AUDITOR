@@ -2,7 +2,6 @@ import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import ManualAudit from './ManualAudit';
-import { AnalyzedAct } from '../types';
 
 // Mock Lucide icons
 mock.module('lucide-react', () => ({
