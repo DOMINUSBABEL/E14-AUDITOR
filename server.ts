@@ -195,12 +195,14 @@ export const analyzeElectionAct = async (
           isoTimestamp: new Date().toISOString(),
           timestamp: new Date().toLocaleTimeString()
         };
-      } catch (err: any) {
-        console.warn(`[Backend] Model ${modelName} failed:`, err.message);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.warn(`[Backend] Model ${modelName} failed:`, errorMessage);
         lastError = err;
       }
     }
-    throw new Error(lastError?.message || "All models failed to process document.");
+    const finalErrorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    throw new Error(finalErrorMessage || "All models failed to process document.");
   } else {
     const client = getOpenAIClient();
     const response = await client.chat.completions.create({
@@ -265,9 +267,10 @@ const server = Bun.serve({
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         console.error("Analysis error:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: errorMessage }), {
           status: 500,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         });

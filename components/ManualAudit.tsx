@@ -170,16 +170,17 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
           });
           setResults(prev => [...prev, analysis]);
           finalResults[i] = analysis;
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(`Error processing ${item.source}:`, err);
           const failResult: Partial<AnalyzedAct> = {
             archivo_analizado: item.source,
             status: 'failed',
             document_integrity: {
               estado: 'ERROR_DE_LECTURA',
-              hallazgos: [`Error: ${err.message || 'Error desconocido'}`],
+              hallazgos: [`Error: ${errorMessage}`],
               nivel_de_confianza: 'Bajo',
-              conclusion: `Falló la extracción: ${err.message || 'Error de la API de Gemini'}`
+              conclusion: `Falló la extracción: ${errorMessage}`
             },
             mesa: 'UNKNOWN', zona: 'UNKNOWN', votes: [], total_calculated: 0, total_declared: 0, is_fraud: false, forensic_analysis: []
           };
