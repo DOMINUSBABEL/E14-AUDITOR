@@ -128,7 +128,7 @@ const App: React.FC = () => {
   // Function to lift audit results from ManualAudit
   const addAuditResults = useCallback((newResults: Partial<AnalyzedAct>[]) => {
     const formattedResults: AnalyzedAct[] = newResults.map(r => ({
-      id: r.id || Math.random().toString(36).substr(2, 9),
+      id: r.id || generateSecureId(),
       mesa: r.mesa || 'UNKNOWN',
       zona: r.zona || 'UNKNOWN',
       votes: r.votes || [],
