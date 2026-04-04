@@ -24,13 +24,19 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
   // Configuration State
   const [showConfig, setShowConfig] = useState(false);
   const [clientParty, setClientParty] = useState(POLITICAL_CONFIG.CLIENT_NAME);
-  const [rivalParties, setRivalParties] = useState<string[]>(POLITICAL_CONFIG.RIVALS);
+  const [rivalParties, setRivalParties] = useState<Set<string>>(new Set(POLITICAL_CONFIG.RIVALS));
   const [autoDetect, setAutoDetect] = useState(true);
 
   const handleRivalToggle = (party: string) => {
-    setRivalParties(prev =>
-      prev.includes(party) ? prev.filter(p => p !== party) : [...prev, party]
-    );
+    setRivalParties(prev => {
+      const next = new Set(prev);
+      if (next.has(party)) {
+        next.delete(party);
+      } else {
+        next.add(party);
+      }
+      return next;
+    });
   };
 
   const handleExportBatch = async (format: 'pdf' | 'json' | 'bundle' | 'docx') => {
@@ -165,7 +171,7 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
           const { base64, mimeType } = await item.getData();
           const analysis = await analyzeElectionAct(base64, mimeType, item.source, {
             clientParty,
-            rivalParties,
+            rivalParties: Array.from(rivalParties),
             autoDetect
           });
           setResults(prev => [...prev, analysis]);
@@ -255,7 +261,7 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                                     <label key={p} className="flex items-center gap-2 text-slate-300 text-xs cursor-pointer p-1 hover:bg-slate-900 rounded">
                                         <input
                                             type="checkbox"
-                                            checked={rivalParties.includes(p)}
+                                            checked={rivalParties.has(p)}
                                             onChange={() => handleRivalToggle(p)}
                                             className="rounded border-slate-700 text-primary-600 bg-slate-900 focus:ring-primary-600 focus:ring-offset-slate-900"
                                         />
