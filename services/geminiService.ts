@@ -40,8 +40,9 @@ export const analyzeElectionAct = async (
     }
 
     return await response.json();
-  } catch (err: any) {
-    console.error(`[GeminiServiceClient] Analysis failed:`, err.message);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error(`[GeminiServiceClient] Analysis failed:`, errorMessage);
     throw err;
   }
 };
