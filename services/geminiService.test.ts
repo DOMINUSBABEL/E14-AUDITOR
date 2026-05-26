@@ -25,15 +25,43 @@ mock.module("@google/genai", () => {
 
 describe("geminiService", () => {
   let runBusinessLogic: any;
+  let analyzeElectionAct: any;
   const originalEthics = POLITICAL_CONFIG.STRICT_ETHICS;
 
   beforeAll(async () => {
       const module = await import("./geminiService");
       runBusinessLogic = module.runBusinessLogic;
+      analyzeElectionAct = module.analyzeElectionAct;
   });
 
   afterAll(() => {
     (POLITICAL_CONFIG as any).STRICT_ETHICS = originalEthics;
+  });
+
+  describe("analyzeElectionAct", () => {
+    it("should throw an error for files larger than 20MB", async () => {
+        // Create a string that would result in > 20MB after (length * 3) / 4 calculation
+        // sizeInBytes = (length * 3) / 4
+        // 20 * 1024 * 1024 < (length * 3) / 4
+        // length > (20 * 1024 * 1024 * 4) / 3
+        const largeLength = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 100;
+        const largeBase64 = "a".repeat(largeLength);
+
+        await expect(analyzeElectionAct(largeBase64, "application/pdf"))
+            .rejects.toThrow("Archivo demasiado grande (Máx 20MB). Por favor comprime el PDF.");
+    });
+
+    it("should not throw size error for files smaller than 20MB", async () => {
+        const smallLength = Math.floor((10 * 1024 * 1024 * 4) / 3);
+        const smallBase64 = "a".repeat(smallLength);
+
+        // We expect it NOT to throw the specific size error.
+        try {
+            await analyzeElectionAct(smallBase64, "application/pdf");
+        } catch (error: any) {
+            expect(error.message).not.toBe("Archivo demasiado grande (Máx 20MB). Por favor comprime el PDF.");
+        }
+    });
   });
 
   describe("runBusinessLogic", () => {
