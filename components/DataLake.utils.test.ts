@@ -134,3 +134,67 @@ describe("generateCSVChunks", () => {
       expect(chunks[2]).toBe('"act-1","",""');
   });
 });
+
+describe("Edge Case Handling", () => {
+  const mockAct = {
+    id: "edge-case",
+    numeric: 123,
+    stringNumeric: "123",
+    empty: "",
+    whitespace: "   ",
+    newline: "Line1\nLine2",
+    crlf: "Line1\r\nLine2",
+    tab: "Col1\tCol2",
+    unicode: "Mesa 1 ✅",
+    delimiters: 'Comma, and "quote"',
+    missing: undefined,
+  } as any;
+
+  test("should handle special characters correctly", () => {
+    const columns = ["newline", "crlf", "tab", "unicode"];
+    const chunks = generateCSVChunks([mockAct], columns);
+    const row = chunks[2];
+
+    // Newlines are preserved inside quotes
+    expect(row).toContain('"Line1\nLine2"');
+    expect(row).toContain('"Line1\r\nLine2"');
+    // Tabs are preserved inside quotes
+    expect(row).toContain('"Col1\tCol2"');
+    // Unicode is preserved
+    expect(row).toContain('"Mesa 1 ✅"');
+  });
+
+  test("should handle delimiter collisions", () => {
+    const columns = ["delimiters"];
+    const chunks = generateCSVChunks([mockAct], columns);
+    const row = chunks[2];
+    // "Comma, and ""quote"""
+    expect(row).toBe('"Comma, and ""quote"""');
+  });
+
+  test("should handle empty and whitespace strings", () => {
+    const columns = ["empty", "whitespace"];
+    const chunks = generateCSVChunks([mockAct], columns);
+    const row = chunks[2];
+    // "" -> ""
+    // "   " -> "   "
+    expect(row).toBe('"","   "');
+  });
+
+  test("should handle missing columns gracefully", () => {
+    const columns = ["nonExistentColumn"];
+    const chunks = generateCSVChunks([mockAct], columns);
+    const row = chunks[2];
+    // undefined -> "" -> "" (quoted empty string)
+    expect(row).toBe('""');
+  });
+
+  test("should handle mixed types correctly", () => {
+    const columns = ["numeric", "stringNumeric"];
+    const chunks = generateCSVChunks([mockAct], columns);
+    const row = chunks[2];
+    // numeric 123 -> 123 (unquoted)
+    // string "123" -> "123" (quoted)
+    expect(row).toBe('123,"123"');
+  });
+});
