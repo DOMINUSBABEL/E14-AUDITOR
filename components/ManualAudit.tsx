@@ -10,7 +10,11 @@ interface ManualAuditProps {
   onComplete?: (results: Partial<AnalyzedAct>[]) => void;
 }
 
-const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
+const ManualAudit: React.FC<ManualAuditProps> = (props) => {
+  if (typeof window !== 'undefined' && (window as any).__MOCK_MANUAL_AUDIT__) {
+    return (window as any).__MOCK_MANUAL_AUDIT__(props);
+  }
+  const { onComplete } = props;
   const [files, setFiles] = useState<File[]>([]);
   const [urls, setUrls] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'upload' | 'urls' | 'registraduria'>('upload');
@@ -41,6 +45,49 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
   const [clientParty, setClientParty] = useState(POLITICAL_CONFIG.CLIENT_NAME);
   const [rivalParties, setRivalParties] = useState<Set<string>>(new Set(POLITICAL_CONFIG.RIVALS));
   const [autoDetect, setAutoDetect] = useState(true);
+
+  // Dynamic LLM Provider Configuration
+  const [provider, setProvider] = useState<string>(() => localStorage.getItem('audit_provider') || 'gemini');
+  const [model, setModel] = useState<string>(() => localStorage.getItem('audit_model') || 'gemini-2.5-flash-latest');
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('audit_api_keys');
+      return saved ? JSON.parse(saved) : { gemini: '', claude: '', openai: '', deepseek: '' };
+    } catch {
+      return { gemini: '', claude: '', openai: '', deepseek: '' };
+    }
+  });
+  const [ollamaHost, setOllamaHost] = useState<string>(() => localStorage.getItem('audit_ollama_host') || 'http://localhost:11434/v1');
+
+  // Sync to localStorage
+  const handleProviderChange = (newProvider: string) => {
+    setProvider(newProvider);
+    localStorage.setItem('audit_provider', newProvider);
+    // Update default model for provider automatically
+    let defaultModel = 'gemini-2.5-flash-latest';
+    if (newProvider === 'claude') defaultModel = 'claude-3-5-sonnet-20241022';
+    else if (newProvider === 'openai') defaultModel = 'gpt-4o';
+    else if (newProvider === 'deepseek') defaultModel = 'deepseek-chat';
+    else if (newProvider === 'ollama') defaultModel = 'gemma2';
+    setModel(defaultModel);
+    localStorage.setItem('audit_model', defaultModel);
+  };
+
+  const handleModelChange = (newModel: string) => {
+    setModel(newModel);
+    localStorage.setItem('audit_model', newModel);
+  };
+
+  const handleApiKeyChange = (p: string, key: string) => {
+    const nextKeys = { ...apiKeys, [p]: key };
+    setApiKeys(nextKeys);
+    localStorage.setItem('audit_api_keys', JSON.stringify(nextKeys));
+  };
+
+  const handleOllamaHostChange = (host: string) => {
+    setOllamaHost(host);
+    localStorage.setItem('audit_ollama_host', host);
+  };
 
   const handleRivalToggle = (party: string) => {
     setRivalParties(prev => {
@@ -187,19 +234,28 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
         const item = itemsToProcess[i];
         if (!item) break;
 
+        try {
           let analysis;
           if (item.getData) {
             const { base64, mimeType } = await item.getData();
             analysis = await analyzeElectionAct(base64, mimeType, item.source, {
               clientParty,
               rivalParties: Array.from(rivalParties),
-              autoDetect
+              autoDetect,
+              provider,
+              model,
+              apiKeys,
+              ollamaHost
             });
           } else if (item.imageUrl) {
             analysis = await analyzeElectionAct(null, null, item.source, {
               clientParty,
               rivalParties: Array.from(rivalParties),
-              autoDetect
+              autoDetect,
+              provider,
+              model,
+              apiKeys,
+              ollamaHost
             }, item.imageUrl);
           } else {
             throw new Error("Parámetro no reconocido");
@@ -301,6 +357,68 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                )}
+
+                <div className="border-t border-slate-800/60 my-4"></div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Proveedor de IA (LLM)</label>
+                        <select
+                            value={provider}
+                            onChange={(e) => handleProviderChange(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-lg p-2.5 focus:border-primary-500 focus:outline-none"
+                        >
+                            <option value="gemini">Gemini (Google)</option>
+                            <option value="claude">Claude (Anthropic)</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="ollama">Ollama (Gemma / Local)</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Modelo de Inferencia</label>
+                        <input
+                            type="text"
+                            value={model}
+                            onChange={(e) => handleModelChange(e.target.value)}
+                            placeholder={
+                                provider === 'gemini' ? 'gemini-2.5-flash-latest' :
+                                provider === 'claude' ? 'claude-3-5-sonnet-20241022' :
+                                provider === 'openai' ? 'gpt-4o' :
+                                provider === 'deepseek' ? 'deepseek-chat' : 'gemma2'
+                            }
+                            className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-lg p-2.5 focus:border-primary-500 focus:outline-none font-mono"
+                        />
+                    </div>
+                </div>
+
+                {provider === 'ollama' ? (
+                    <div className="space-y-2 bg-slate-950/45 p-3 rounded border border-slate-800/40">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Ollama Host URL</label>
+                        <input
+                            type="text"
+                            value={ollamaHost}
+                            onChange={(e) => handleOllamaHostChange(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-lg p-2 focus:border-primary-500 focus:outline-none font-mono"
+                        />
+                    </div>
+                ) : (
+                    <div className="space-y-2 bg-slate-950/45 p-3 rounded border border-slate-800/40">
+                        <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Clave de API (API Key)</label>
+                            <span className="text-[10px] text-slate-500 font-mono font-bold uppercase">{provider} Key</span>
+                        </div>
+                        <input
+                            type="password"
+                            value={apiKeys[provider] || ''}
+                            onChange={(e) => handleApiKeyChange(provider, e.target.value)}
+                            placeholder={`Ingresar API Key para ${provider}...`}
+                            className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-lg p-2.5 focus:border-primary-500 focus:outline-none font-mono"
+                        />
+                        <p className="text-[10px] text-slate-500 text-slate-400">Si se deja vacío, se utilizará la clave de API configurada en el servidor.</p>
                     </div>
                 )}
             </div>

@@ -5,6 +5,10 @@ interface AuditConfig {
   clientParty: string;
   rivalParties: string[];
   autoDetect: boolean;
+  provider?: string;
+  model?: string;
+  apiKeys?: Record<string, string>;
+  ollamaHost?: string;
 }
 
 export function runBusinessLogic(
