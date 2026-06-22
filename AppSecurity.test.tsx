@@ -1,34 +1,10 @@
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, mock, beforeEach, afterEach, afterAll } from 'bun:test';
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 
-// Mock child components
-mock.module('./components/Sidebar', () => {
-  return {
-    default: ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => (
-      <div data-testid="sidebar">
-        <button onClick={() => setActiveTab('audit')}>Audit</button>
-        <button onClick={() => setActiveTab('data')}>Data Lake</button>
-      </div>
-    )
-  };
-});
-
-mock.module('./components/ManualAudit', () => {
-  return {
-    default: ({ onComplete }: { onComplete: (results: any[]) => void }) => (
-      <div data-testid="manual-audit">
-        <button onClick={() => onComplete([{ mesa: 'MESA-TEST', zona: 'ZONA-TEST' }])}>
-          Simulate Audit Complete
-        </button>
-      </div>
-    )
-  };
-});
-
-// Mock Recharts
-mock.module('recharts', () => {
+// Mock Recharts (external package)
+const rechartsMock = mock.module('recharts', () => {
   return {
     ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
     BarChart: () => <div />,
@@ -44,6 +20,28 @@ mock.module('recharts', () => {
 });
 
 describe('App ID Generation Security', () => {
+  beforeEach(() => {
+    (window as any).__MOCK_SIDEBAR__ = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => (
+      <div data-testid="sidebar">
+        <button onClick={() => setActiveTab('audit')}>Audit</button>
+        <button onClick={() => setActiveTab('data')}>Data Lake</button>
+      </div>
+    );
+
+    (window as any).__MOCK_MANUAL_AUDIT__ = ({ onComplete }: { onComplete: (results: any[]) => void }) => (
+      <div data-testid="manual-audit">
+        <button onClick={() => onComplete([{ mesa: 'MESA-TEST', zona: 'ZONA-TEST' }])}>
+          Simulate Audit Complete
+        </button>
+      </div>
+    );
+  });
+
+  afterEach(() => {
+    delete (window as any).__MOCK_SIDEBAR__;
+    delete (window as any).__MOCK_MANUAL_AUDIT__;
+  });
+
   it('generates a valid UUID for audit results when ID is missing', async () => {
     const { getByText, getByTestId } = render(<App />);
 
@@ -80,8 +78,8 @@ describe('App ID Generation Security', () => {
         // The ID should be in the same row. In DataLake.tsx it seems ID is the first column.
         const row = cell.parentElement;
         if (row) {
-          const idCell = row.querySelector('td'); // Assuming ID is first
-          if (idCell && uuidRegex.test(idCell.textContent || '')) {
+          const actId = row.getAttribute('data-id');
+          if (actId && uuidRegex.test(actId)) {
             foundUuid = true;
           }
         }

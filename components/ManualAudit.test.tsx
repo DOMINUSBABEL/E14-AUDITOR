@@ -3,26 +3,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import ManualAudit from './ManualAudit';
 
-// Mock Lucide icons
-mock.module('lucide-react', () => ({
-  Upload: () => <div data-testid="icon-upload" />,
-  Camera: () => <div data-testid="icon-camera" />,
-  FileText: () => <div data-testid="icon-file-text" />,
-  Check: () => <div data-testid="icon-check" />,
-  AlertTriangle: () => <div data-testid="icon-alert-triangle" />,
-  Loader2: () => <div data-testid="icon-loader" />,
-  Microscope: () => <div data-testid="icon-microscope" />,
-  Gavel: () => <div data-testid="icon-gavel" />,
-  Scale: () => <div data-testid="icon-scale" />,
-  Link: () => <div data-testid="icon-link" />,
-  Folder: () => <div data-testid="icon-folder" />,
-  CheckCircle: () => <div data-testid="icon-check-circle" />,
-  Globe: () => <div data-testid="icon-globe" />,
-  Download: () => <div data-testid="icon-download" />,
-  Archive: () => <div data-testid="icon-archive" />,
-  FileJson: () => <div data-testid="icon-file-json" />,
-  Settings2: () => <div data-testid="icon-settings" />,
-}));
+// Rely on global mock from test-setup.ts
 
 // Mock Gemini Service
 const mockAnalyze = mock(() => Promise.resolve({}));

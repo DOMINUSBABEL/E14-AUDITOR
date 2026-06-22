@@ -1,3 +1,4 @@
+import React from 'react';
 let GlobalRegistrator: any;
 try {
     GlobalRegistrator = require('@happy-dom/global-registrator').GlobalRegistrator;
@@ -30,14 +31,56 @@ mock.module('openai', () => {
     };
 });
 
-// Mock lucide-react
+// Mock lucide-react dynamically with static exports to resolve Bun linking
 mock.module('lucide-react', () => {
+    const makeIconMock = (name: string) => {
+        return (props: any) => React.createElement('div', { 'data-testid': `icon-${name.toLowerCase()}`, ...props });
+    };
     return {
-        ChartColumn: () => null,
-        Server: () => null,
-        Database: () => null,
-        BrainCircuit: () => null,
-        Scale: () => null
+        AlertTriangle: makeIconMock('AlertTriangle'),
+        CheckCircle: makeIconMock('CheckCircle'),
+        Clock: makeIconMock('Clock'),
+        FileText: makeIconMock('FileText'),
+        Bell: makeIconMock('Bell'),
+        Settings: makeIconMock('Settings'),
+        X: makeIconMock('X'),
+        Mail: makeIconMock('Mail'),
+        MessageSquare: makeIconMock('MessageSquare'),
+        Scale: makeIconMock('Scale'),
+        Download: makeIconMock('Download'),
+        Search: makeIconMock('Search'),
+        Calendar: makeIconMock('Calendar'),
+        Filter: makeIconMock('Filter'),
+        Database: makeIconMock('Database'),
+        FileSpreadsheet: makeIconMock('FileSpreadsheet'),
+        Archive: makeIconMock('Archive'),
+        ShieldCheck: makeIconMock('ShieldCheck'),
+        Gavel: makeIconMock('Gavel'),
+        Printer: makeIconMock('Printer'),
+        Server: makeIconMock('Server'),
+        Cpu: makeIconMock('Cpu'),
+        ArrowRight: makeIconMock('ArrowRight'),
+        FilterX: makeIconMock('FilterX'),
+        Upload: makeIconMock('Upload'),
+        Loader2: makeIconMock('Loader2'),
+        Microscope: makeIconMock('Microscope'),
+        Link: makeIconMock('Link'),
+        Folder: makeIconMock('Folder'),
+        Globe: makeIconMock('Globe'),
+        FileJson: makeIconMock('FileJson'),
+        Settings2: makeIconMock('Settings2'),
+        MapPin: makeIconMock('MapPin'),
+        Building2: makeIconMock('Building2'),
+        Layers: makeIconMock('Layers'),
+        Grid: makeIconMock('Grid'),
+        AlertCircle: makeIconMock('AlertCircle'),
+        Sparkles: makeIconMock('Sparkles'),
+        FolderTree: makeIconMock('FolderTree'),
+        Activity: makeIconMock('Activity'),
+        Camera: makeIconMock('Camera'),
+        Check: makeIconMock('Check'),
+        ChartColumn: makeIconMock('ChartColumn'),
+        BrainCircuit: makeIconMock('BrainCircuit')
     };
 });
 

@@ -176,7 +176,7 @@ const DataLake: React.FC<DataLakeProps> = ({ acts }) => {
             </thead>
             <tbody className="divide-y divide-slate-800">
               {filteredActs.map((act) => (
-                <tr key={act.id} className="hover:bg-slate-800/50 transition-colors">
+                <tr key={act.id} data-id={act.id} className="hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs">{act.timestamp}</td>
                   <td className="px-6 py-4 font-bold text-white">{act.mesa}</td>
                   <td className="px-6 py-4">{act.zona}</td>

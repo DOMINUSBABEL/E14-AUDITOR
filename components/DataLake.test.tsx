@@ -1,14 +1,21 @@
-import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import DataLake from './DataLake';
 import { AnalyzedAct } from '../types';
 
-// Mock generateCSVChunks to avoid actual CSV logic in component test
+// Mock generateCSVChunks via window hook to avoid actual CSV logic in component test
 // and allow us to spy on it
-mock.module('./DataLake.utils', () => ({
-  generateCSVChunks: mock((data, cols) => ['mock,csv,data']),
-}));
+const spyGenerateCSVChunks = mock((data, cols) => ['mock,csv,data']);
+
+beforeEach(() => {
+  (window as any).__MOCK_GENERATE_CSV_CHUNKS__ = spyGenerateCSVChunks;
+  spyGenerateCSVChunks.mockClear();
+});
+
+afterEach(() => {
+  delete (window as any).__MOCK_GENERATE_CSV_CHUNKS__;
+});
 
 const mockActs: AnalyzedAct[] = [
   {
@@ -127,15 +134,15 @@ describe('DataLake Component', () => {
   });
 
   it('generates export when "Download CSV" is clicked', async () => {
-    // We import generateCSVChunks locally inside the test to assert on it
-    // since it's mocked via mock.module
-    const { generateCSVChunks } = require('./DataLake.utils');
-    generateCSVChunks.mockClear();
+    const generateCSVChunks = spyGenerateCSVChunks;
 
     const { getByText, queryByText } = render(<DataLake acts={mockActs} />);
 
     // Open modal
     fireEvent.click(getByText('Export Data'));
+
+    // Select CSV format
+    fireEvent.click(getByText('csv'));
 
     // Click download
     fireEvent.click(getByText('Download CSV'));
@@ -150,8 +157,7 @@ describe('DataLake Component', () => {
   });
 
   it('filters data by date when exporting', async () => {
-    const { generateCSVChunks } = require('./DataLake.utils');
-    generateCSVChunks.mockClear();
+    const generateCSVChunks = spyGenerateCSVChunks;
 
     const { getByText, container } = render(<DataLake acts={mockActs} />);
 
@@ -185,6 +191,9 @@ describe('DataLake Component', () => {
     // via synthetic events, we will focus on asserting that clicking "Download CSV" calls
     // the export function `generateCSVChunks` properly.
 
+    // Select CSV format
+    fireEvent.click(getByText('csv'));
+
     // Click download
     fireEvent.click(getByText('Download CSV'));
 
@@ -193,8 +202,7 @@ describe('DataLake Component', () => {
   });
 
   it('respects column selection when exporting', async () => {
-    const { generateCSVChunks } = require('./DataLake.utils');
-    generateCSVChunks.mockClear();
+    const generateCSVChunks = spyGenerateCSVChunks;
 
     const { getByText, getByLabelText } = render(<DataLake acts={mockActs} />);
 
@@ -204,6 +212,9 @@ describe('DataLake Component', () => {
     // Uncheck 'id' column
     const idCheckbox = getByLabelText('id', { exact: false });
     fireEvent.click(idCheckbox);
+
+    // Select CSV format
+    fireEvent.click(getByText('csv'));
 
     // Click download
     fireEvent.click(getByText('Download CSV'));
