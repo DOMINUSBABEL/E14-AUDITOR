@@ -38,10 +38,11 @@ describe("registraduriaService", () => {
       expect(result).toEqual([
         { id: '01', n: 'ANTIOQUIA' },
         { id: '11', n: 'BOGOTA D.C.' },
-        { id: '27', n: 'VALLE' }
+        { id: '27', n: 'VALLE' },
+        { id: '07', n: 'BOYACA' }
       ]);
 
-      const munResult = await registraduriaService.getMunicipalities("ALC", "01");
+      const munResult = await registraduriaService.getMunicipalities("ALC", "99");
       expect(munResult).toEqual([]);
     });
 
@@ -55,10 +56,11 @@ describe("registraduriaService", () => {
       expect(result).toEqual([
         { id: '01', n: 'ANTIOQUIA' },
         { id: '11', n: 'BOGOTA D.C.' },
-        { id: '27', n: 'VALLE' }
+        { id: '27', n: 'VALLE' },
+        { id: '07', n: 'BOYACA' }
       ]);
 
-      const munResult = await registraduriaService.getMunicipalities("ALC", "01");
+      const munResult = await registraduriaService.getMunicipalities("ALC", "99");
       expect(munResult).toEqual([]);
     });
   });
