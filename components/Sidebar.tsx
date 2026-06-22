@@ -70,14 +70,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   }, [deviceMemory]);
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full fixed left-0 top-0 z-10">
+    <aside className="w-64 bg-slate-900/80 backdrop-blur-md border-r border-slate-800 flex flex-col h-full fixed left-0 top-0 z-10">
       <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-        <div className="bg-primary-600 p-2 rounded-lg">
+        <div className="bg-primary-600 p-2 rounded-lg shadow-lg shadow-primary-500/20">
           <ShieldCheck className="text-white w-6 h-6" />
         </div>
         <div>
           <h1 className="font-bold text-white text-lg tracking-tight">AUDITOR<span className="text-primary-500">.IA</span></h1>
-          <p className="text-xs text-slate-400 font-mono">v2.0 Ryzen Core</p>
+          <p className="text-[9px] text-slate-500 font-mono tracking-widest uppercase">BY BABYLON.IA</p>
         </div>
       </div>
 
@@ -91,11 +91,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                 isActive 
-                  ? 'bg-primary-600/10 text-primary-500 border border-primary-600/20' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-primary-600/10 text-primary-500 border border-primary-500/20 shadow-lg shadow-primary-500/5' 
+                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
               }`}
             >
-              <Icon size={20} />
+              <Icon size={20} className={isActive ? 'text-primary-500' : 'text-slate-400'} />
               <span className="font-medium text-sm">{item.label}</span>
             </button>
           );
@@ -103,10 +103,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-800">
-        <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-850">
           <div className="flex items-center space-x-2 mb-2">
-            <Activity className="text-green-500 w-4 h-4 animate-pulse" />
-            <span className="text-xs font-mono text-green-500">SYSTEM ONLINE</span>
+            <Activity className="text-accent-500 w-4 h-4 animate-pulse" />
+            <span className="text-xs font-mono text-accent-500 tracking-wider">SYSTEM ONLINE</span>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-slate-400 font-mono">
@@ -115,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-blue-500 h-full transition-all duration-1000 ease-in-out"
+                className="bg-primary-500 h-full transition-all duration-1000 ease-in-out"
                 style={{ width: `${cpuUsage}%` }}
               ></div>
             </div>
@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-orange-500 h-full transition-all duration-1000 ease-in-out"
+                className="bg-accent-500 h-full transition-all duration-1000 ease-in-out"
                 style={{ width: `${ramUsage.percentage}%` }}
               ></div>
             </div>
