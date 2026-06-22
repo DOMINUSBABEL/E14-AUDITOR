@@ -21,28 +21,45 @@ const App: React.FC = () => {
       const date = new Date();
       date.setMinutes(date.getMinutes() - getRandomInt(0, 10000));
       
+      const cepedaVotes = getRandomInt(80, 180);
+      const espriellaVotes = getRandomInt(80, 180);
+      const blancoVotes = getRandomInt(5, 20);
+      const nulosVotes = getRandomInt(2, 10);
+      const noMarcadosVotes = getRandomInt(1, 8);
+      
+      const calculated = cepedaVotes + espriellaVotes + blancoVotes + nulosVotes + noMarcadosVotes;
+      const declared = isFraud ? calculated + 50 : calculated;
+      
+      const mockVotes = [
+        { party: "Iván Cepeda Castro (Pacto Histórico)", count: cepedaVotes },
+        { party: "Abelardo de la Espriella (Defensores de la Patria)", count: isFraud ? espriellaVotes + 50 : espriellaVotes },
+        { party: "Voto en Blanco", count: blancoVotes },
+        { party: "Votos Nulos", count: nulosVotes },
+        { party: "Votos no Marcados", count: noMarcadosVotes }
+      ];
+
       return {
         id: generateSecureId(),
         mesa: `MESA-${getRandomInt(1000, 9999)}`,
         zona: `ZONA-${getRandomInt(1, 20).toString().padStart(2, '0')}`,
-        votes: [],
-        total_calculated: 100,
-        total_declared: isFraud ? 120 : 100,
+        votes: mockVotes,
+        total_calculated: calculated,
+        total_declared: declared,
         is_fraud: isFraud,
         is_legible: true,
         forensic_analysis: isFraud ? [{
           type: 'TACHON',
-          description: 'Detected erasure on cell 4',
-          affected_party: POLITICAL_CONFIG.CLIENT_NAME,
-          original_value_inferred: 50,
-          final_value_legible: 20,
+          description: 'Detected erasure on cell 2',
+          affected_party: "Abelardo de la Espriella (Defensores de la Patria)",
+          original_value_inferred: espriellaVotes,
+          final_value_legible: espriellaVotes + 50,
           confidence: 0.95
         }] : [],
         strategic_analysis: isFraud ? {
           intent: 'PERJUICIO',
-          impact_score: -30,
+          impact_score: -50,
           recommendation: 'IMPUGNAR',
-          legal_grounding: 'Art 192. Modificación ilegal.'
+          legal_grounding: 'Art 192. Modificación ilegal de resultados (Tachón detectado).'
         } : undefined,
         timestamp: date.toLocaleTimeString(),
         isoTimestamp: date.toISOString(),
@@ -89,28 +106,46 @@ const App: React.FC = () => {
       if (getSecureRandom() > 0.95) {
         const isFraud = getSecureRandom() > 0.9;
         const now = new Date();
+        
+        const cepedaVotes = getRandomInt(80, 180);
+        const espriellaVotes = getRandomInt(80, 180);
+        const blancoVotes = getRandomInt(5, 20);
+        const nulosVotes = getRandomInt(2, 10);
+        const noMarcadosVotes = getRandomInt(1, 8);
+        
+        const calculated = cepedaVotes + espriellaVotes + blancoVotes + nulosVotes + noMarcadosVotes;
+        const declared = isFraud ? calculated + 30 : calculated;
+        
+        const mockVotes = [
+          { party: "Iván Cepeda Castro (Pacto Histórico)", count: cepedaVotes },
+          { party: "Abelardo de la Espriella (Defensores de la Patria)", count: isFraud ? espriellaVotes + 30 : espriellaVotes },
+          { party: "Voto en Blanco", count: blancoVotes },
+          { party: "Votos Nulos", count: nulosVotes },
+          { party: "Votos no Marcados", count: noMarcadosVotes }
+        ];
+
         const newAct: AnalyzedAct = {
           id: generateSecureId(),
           mesa: `MESA-${getRandomInt(1000, 9999)}`,
           zona: `ZONA-${getRandomInt(1, 20).toString().padStart(2, '0')}`,
-          votes: [],
-          total_calculated: 100,
-          total_declared: isFraud ? 120 : 100,
+          votes: mockVotes,
+          total_calculated: calculated,
+          total_declared: declared,
           is_fraud: isFraud,
           is_legible: true,
           forensic_analysis: isFraud ? [{
              type: 'ENMENDADURA',
-             description: 'Value changed from 10 to 80',
-             affected_party: 'Centro Democrático',
-             original_value_inferred: 10,
-             final_value_legible: 80,
+             description: 'Value changed to favor rival candidate',
+             affected_party: 'Abelardo de la Espriella (Defensores de la Patria)',
+             original_value_inferred: espriellaVotes,
+             final_value_legible: espriellaVotes + 30,
              confidence: 0.88
           }] : [],
           strategic_analysis: isFraud ? {
-             intent: 'PERJUICIO', // Rival gained votes
-             impact_score: -70,
+             intent: 'PERJUICIO',
+             impact_score: -30,
              recommendation: 'IMPUGNAR',
-             legal_grounding: 'Fraude aritmético evidente.'
+             legal_grounding: 'Inconsistencia numérica para favorecer rival.'
           } : undefined,
           timestamp: now.toLocaleTimeString(),
           isoTimestamp: now.toISOString(),
