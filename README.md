@@ -282,21 +282,29 @@ graph TD
 
 ---
 
-## 🏔️ 9. División Política y Estructura de Zonas Electorales Reales (Caso Amalfi)
+## 🏔️ 9. División Política y Estructura de Zonas Electorales Reales
 
-Un error común en los generadores de simulación es la suposición de zonas secuenciales numéricas simples (`Zona_01`, `Zona_02`, etc.). Sin embargo, la división político-administrativa real colombiana asigna códigos de zona específicos de acuerdo al tipo de territorio (Urbano vs. Cabecera Municipal vs. Corregimientos/Rurales):
+Un error común en los sistemas de auditoría simulados es suponer una nomenclatura secuencial lineal simplista (ej. `Zona_01`, `Zona_02`, etc.) para agrupar los puestos de votación. Sin embargo, la división político-administrativa real (DIVIPOLA) en los escrutinios oficiales del Estado colombiano sigue un esquema de codificación jerárquica y semántica basada en el tipo de territorio y recintos:
 
-* **Zona 00:** Corresponde a la Cabecera Municipal de Amalfi. Agrupa recintos clave como el Puesto 01 (Cárcel Municipal, etc.).
-* **Zona 98:** Agrupa todos los puestos de votación del sector Rural / Corregimientos de Amalfi. Es aquí donde comúnmente se presentan los desafíos de transmisión y auditoría por conectividad de red.
-* **Zona 99:** Zona de consolidación especial o puestos rurales periféricos.
+* **Zonas Urbanas / Cabecera Municipal (Zonas `00`, `01`, `02`, etc.):** Agrupan los puestos de votación localizados en el casco urbano principal de los municipios. La Zona `00` suele representar la zona principal o única de cabecera municipal, la cual concentra los mayores puestos de votación física (colegios, cárceles municipales, coliseos).
+* **Zonas Rurales / Corregimientos (Generalmente Zona `98`):** Agrupa todos los recintos de votación localizados fuera de la cabecera urbana (veredas, corregimientos e inspecciones de policía). Los reportes sobre estas zonas son de alta prioridad jurídica debido a que los desafíos de infraestructura y conectividad incrementan la probabilidad de discrepancias de transmisión.
+* **Zonas de Consolidación Especial o Periféricas (Generalmente Zona `99`):** Designada para la consolidación de actas especiales, escrutinios remotos o puestos de votación flotantes con condiciones logísticas particulares.
 
-### 🛠️ Corrección de Reportes en Amalfi
-El motor de auditoría local heurística ha sido corregido para evitar la simulación de zonas inexistentes (`Zona_06`, `Zona_07`, `Zona_08`, `Zona_09`). Los reportes ahora se estructuran de forma determinista y coherente en las carpetas de zonas reales:
-* `C:\Users\jegom\OneDrive\Desktop\E14A\Amalfi\Zona_00` (Urbano)
-* `C:\Users\jegom\OneDrive\Desktop\E14A\Amalfi\Zona_98` (Rural)
-* `C:\Users\jegom\OneDrive\Desktop\E14A\Amalfi\Zona_99` (Especial)
+### 🛠️ Estructura de Salida y Directorios de Auditoría
+El motor de ingesta y consolidación de reportes forenses estructura los expedientes de manera dinámica siguiendo esta jerarquía real, evitando la generación de carpetas o zonas inexistentes. La arquitectura jerárquica de almacenamiento se despliega bajo el siguiente estándar:
 
-Esto garantiza que la ficha técnica generada por la IA (`ficha_tecnica.json`), el memorial legal (`impugnacion.txt`) y el certificado compilado (`acta_e14.pdf`) coincidan exactamente con la nomenclatura geográfica real utilizada por la Registraduría.
+```text
+📂 [Directorio_Raíz]/
+ └── 📂 [Municipio]/
+      └── 📂 Zona_[Código_Zona_Real]/
+           └── 📂 Puesto_[Nombre_Puesto]/
+                └── 📂 Mesa_[Número_Mesa]/
+                     ├── 📄 ficha_tecnica.json  (Metadatos de auditoría forense de IA)
+                     ├── 📄 impugnacion.txt     (Memorial de impugnación legal si aplica)
+                     └── 📄 acta_e14.pdf        (Certificado digital unificado del acta original)
+```
+
+Por ejemplo, si se audita la cabecera municipal de un municipio como Amalfi, la salida se estructurará bajo `Zona_00` en recintos específicos (como la Institución Educativa Eduardo Fernández), mientras que las veredas circundantes se agruparán bajo la `Zona_98`. Esto garantiza que los expedientes de reclamación presentados ante los claveros y comisiones escrutadoras coincidan al 100% con la codificación oficial de la Registraduría.
 
 ---
 
