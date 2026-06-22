@@ -5,9 +5,10 @@ import JSZip from 'jszip';
 
 interface RegistraduriaScraperProps {
   onImageFound: (url: string, metadata: string) => void;
+  onQueueTables?: (tables: registraduria.RegistraduriaTable[], dept: string, mun: string, puesto: string, corp: string) => void;
 }
 
-const RegistraduriaScraper: React.FC<RegistraduriaScraperProps> = ({ onImageFound }) => {
+const RegistraduriaScraper: React.FC<RegistraduriaScraperProps> = ({ onImageFound, onQueueTables }) => {
   const [activeMode, setActiveMode] = useState<'magic' | 'manual' | 'export'>('magic');
   const [magicPrompt, setMagicPrompt] = useState('');
   const [isAgenticLoading, setIsAgenticLoading] = useState(false);
@@ -77,7 +78,8 @@ const RegistraduriaScraper: React.FC<RegistraduriaScraperProps> = ({ onImageFoun
 
         let completedCount = 0;
         const fetchTasks = targetTables.map(async (t) => {
-            const url = t.u || `https://cdn-e14.registraduria.gov.co/2023/${selectedCorp}/${t.id}.jpg`;
+            const year = selectedCorp === 'PRE' ? '2026' : '2023';
+            const url = t.u || `https://cdn-e14.registraduria.gov.co/${year}/${selectedCorp}/${t.id}.jpg`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -169,16 +171,33 @@ const RegistraduriaScraper: React.FC<RegistraduriaScraperProps> = ({ onImageFoun
       )}
 
       {activeMode === 'manual' && (
-        <button
-          onClick={() => {
-              const table = tables.find(t => t.id === selectedTable);
-              if (table) onImageFound(table.u || `https://cdn-e14.registraduria.gov.co/2023/${selectedCorp}/${selectedTable}.jpg`, `Mesa ${table.n}`);
-          }}
-          disabled={!selectedTable}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-50"
-        >
-          Importar Acta para Auditoría
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
+          <button
+            onClick={() => {
+                const table = tables.find(t => t.id === selectedTable);
+                if (table) {
+                    const year = selectedCorp === 'PRE' ? '2026' : '2023';
+                    onImageFound(table.u || `https://cdn-e14.registraduria.gov.co/${year}/${selectedCorp}/${selectedTable}.jpg`, `Mesa ${table.n}`);
+                }
+            }}
+            disabled={!selectedTable}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-50 text-sm"
+          >
+            Importar Acta Seleccionada
+          </button>
+          
+          <button
+            onClick={() => {
+                if (onQueueTables && tables.length > 0) {
+                    onQueueTables(tables, selectedDept, selectedMun, selectedPuesto, selectedCorp);
+                }
+            }}
+            disabled={!selectedPuesto || tables.length === 0}
+            className="flex-1 bg-primary-600 hover:bg-primary-500 text-white py-3 rounded-lg font-bold shadow-lg shadow-primary-900/20 transition-all disabled:opacity-50 text-sm"
+          >
+            Cargar {tables.length} Mesas en Cola
+          </button>
+        </div>
       )}
 
       {activeMode === 'export' && (
