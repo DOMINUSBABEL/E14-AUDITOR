@@ -22,8 +22,12 @@
                 950: '#020617',
               },
               primary: {
-                500: '#3b82f6',
-                600: '#2563eb',
+                500: '#d946ef', // Fuchsia accent from babylonias.com
+                600: '#c026d3',
+              },
+              accent: {
+                500: '#06b6d4', // Cyan accent from babylonias.com
+                600: '#0891b2',
               }
             }
           }
@@ -34,6 +38,7 @@
       body {
         background-color: #020617;
         color: #e2e8f0;
+        overflow-x: hidden;
       }
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
@@ -48,24 +53,107 @@
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
+        background: #d946ef; 
+      }
+      /* Babylon.ia Glowing styles */
+      .gradient-glow {
+        position: fixed;
+        top: -100px;
+        left: 20%;
+        width: 60%;
+        height: 400px;
+        background: radial-gradient(circle, rgba(217, 70, 239, 0.08) 0%, rgba(6, 182, 212, 0.03) 50%, transparent 100%);
+        filter: blur(80px);
+        pointer-events: none;
+        z-index: -2;
+      }
+      .cyber-card {
+        background: rgba(15, 23, 42, 0.6) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(217, 70, 239, 0.15) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      .cyber-card:hover {
+        border-color: rgba(6, 182, 212, 0.4) !important;
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.15) !important;
+        transform: translateY(-2px);
+      }
+      .glow-border {
+        border-color: rgba(217, 70, 239, 0.2) !important;
+      }
+      .glow-border:focus {
+        border-color: rgba(6, 182, 212, 0.6) !important;
+        box-shadow: 0 0 10px rgba(6, 182, 212, 0.2) !important;
       }
     </style>
   <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
+  {
+    "imports": {
+      "react": "https://esm.sh/react@^19.2.4",
+      "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+      "react/": "https://esm.sh/react@^19.2.4/",
+      "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+      "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+      "recharts": "https://esm.sh/recharts@^3.7.0"
+    }
   }
-}
-</script>
+  </script>
 </head>
   <body>
+    <!-- Radial top glow element -->
+    <div class="gradient-glow"></div>
+    
+    <!-- Particle Canvas background -->
+    <canvas id="particles-canvas" style="position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.5;"></canvas>
+
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+
+    <script>
+      (function() {
+        const canvas = document.getElementById('particles-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+          width = canvas.width = window.innerWidth;
+          height = canvas.height = window.innerHeight;
+        });
+
+        const particles = [];
+        const count = 60;
+
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            r: Math.random() * 1.8 + 0.4,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: (Math.random() - 0.5) * 0.35,
+            color: Math.random() > 0.5 ? 'rgba(217, 70, 239, 0.25)' : 'rgba(6, 182, 212, 0.25)'
+          });
+        }
+
+        function animate() {
+          ctx.clearRect(0, 0, width, height);
+          particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > width) p.vx *= -1;
+            if (p.y < 0 || p.y > height) p.vy *= -1;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+          });
+          requestAnimationFrame(animate);
+        }
+        animate();
+      })();
+    </script>
   </body>
 </html>
