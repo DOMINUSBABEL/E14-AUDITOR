@@ -15,23 +15,25 @@ export const AI_CONFIG = {
 };
 
 export const MOCK_PARTIES = [
-  "Pacto Histórico", "Centro Democrático", "Partido Liberal", "Partido Verde", "Cambio Radical"
+  "Iván Cepeda Castro (Pacto Histórico)", 
+  "Abelardo de la Espriella (Defensores de la Patria)", 
+  "Voto en Blanco", 
+  "Votos Nulos", 
+  "Votos no Marcados"
 ];
 
 // Business Logic Configuration
 export const POLITICAL_CONFIG = {
-  CLIENT_NAME: "Pacto Histórico", // The user of the software
-  RIVALS: ["Centro Democrático", "Cambio Radical"], // Main rivals for logic calculation
+  CLIENT_NAME: "Iván Cepeda Castro (Pacto Histórico)", // The user of the software (Iván Cepeda)
+  RIVALS: ["Abelardo de la Espriella (Defensores de la Patria)"], // Main rival (Abelardo de la Espriella)
   STRICT_ETHICS: false // If true, report even positive manipulation. If false, SILENT_LOG positive ones.
 };
 
 // Mock Database of Lawyers per Party (Tenant System)
 export const LAWYERS_DB: Record<string, { name: string; phone: string }> = {
-  "Pacto Histórico": { name: "Representative Pacto Histórico", phone: "+57 300 000 0000" },
-  "Centro Democrático": { name: "Representative Centro Democrático", phone: "+57 300 000 0000" },
-  "Partido Liberal": { name: "Representative Partido Liberal", phone: "+57 300 000 0000" },
-  "Partido Verde": { name: "Representative Partido Verde", phone: "+57 300 000 0000" },
-  "Cambio Radical": { name: "Representative Cambio Radical", phone: "+57 300 000 0000" },
+  "Iván Cepeda Castro (Pacto Histórico)": { name: "Dr. Gustavo Bolívar", phone: "+57 300 111 2233" },
+  "Abelardo de la Espriella (Defensores de la Patria)": { name: "Dr. Hernando Herrera", phone: "+57 310 444 5566" },
+  "Voto en Blanco": { name: "Equipo Jurídico General", phone: "+57 320 777 8899" },
   "Default": { name: "Equipo Jurídico General", phone: "+57 300 000 0000" }
 };
 
