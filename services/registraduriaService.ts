@@ -17,15 +17,22 @@ export interface RegistraduriaTable {
   parent_info?: string; // Metadata about the path
 }
 
-const BASE_URL = 'https://api-resultados.registraduria.gov.co/api/v1';
-
 const fetchApi = async (path: string) => {
+  const isPres = path.split('/').includes('PRE');
+  const baseUrl = isPres
+    ? 'https://api-escrutinios2vueltapresidente2026.registraduria.gov.co/api/v1'
+    : 'https://api-resultados.registraduria.gov.co/api/v1';
+
+  const origin = isPres
+    ? 'https://escrutinios2vueltapresidente2026.registraduria.gov.co'
+    : 'https://divulgacione14.registraduria.gov.co';
+
   try {
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetch(`${baseUrl}${path}`, {
       headers: {
         'Accept': 'application/json',
-        'Origin': 'https://divulgacione14.registraduria.gov.co',
-        'Referer': 'https://divulgacione14.registraduria.gov.co/'
+        'Origin': origin,
+        'Referer': `${origin}/`
       }
     });
     if (!response.ok) return null;
