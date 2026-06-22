@@ -57,7 +57,7 @@ export const getCorporations = async (): Promise<RegistraduriaCorporation[]> => 
 export const getDepartments = async (corpId: string): Promise<RegistraduriaLocation[]> => {
   const data = await fetchApi(`/config/mapas/${corpId}/departamentos.json`);
   return data ? data.map((d: any) => ({ id: d.id, n: d.n })) : [
-      { id: '01', n: 'ANTIOQUIA' }, { id: '11', n: 'BOGOTA D.C.' }, { id: '27', n: 'VALLE' }
+      { id: '01', n: 'ANTIOQUIA' }, { id: '11', n: 'BOGOTA D.C.' }, { id: '27', n: 'VALLE' }, { id: '07', n: 'BOYACA' }
   ];
 };
 
@@ -72,6 +72,8 @@ export const getMunicipalities = async (corpId: string, deptId: string): Promise
     return [{ id: '001', n: 'BOGOTA D.C.' }];
   } else if (deptId === '27') {
     return [{ id: '001', n: 'CALI' }];
+  } else if (deptId === '07') {
+    return [{ id: '036', n: 'ALMEIDA' }];
   }
   return [];
 };
