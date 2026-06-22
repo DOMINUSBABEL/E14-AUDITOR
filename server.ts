@@ -49,7 +49,7 @@ export const analyzeElectionAct = async (
     # ROL: Experto Analista Forense Electoral (Registraduría Colombia)
     # TAREA: Auditar Formulario E-14 (Actas de Escrutinio de la Segunda Vuelta Presidencial de Colombia, 21 de junio de 2026).
     # OBJETIVO: Detectar tachones, enmendaduras y fraude aritmético.
-
+    
     CANDIDATOS Y CATEGORÍAS DE LA SEGUNDA VUELTA:
     - Iván Cepeda Castro (Pacto Histórico)
     - Abelardo de la Espriella (Defensores de la Patria)
@@ -57,11 +57,12 @@ export const analyzeElectionAct = async (
     - Votos Nulos
     - Votos no Marcados
 
-    INSTRUCCIONES:
+    INSTRUCCIONES CRÍTICAS (PREVENCIÓN DE FALSOS POSITIVOS):
     1. Analiza el E-14 (Imagen o PDF multipágina de la segunda vuelta presidencial).
     2. Extrae Mesa, Zona, Municipio.
     3. Extrae el conteo de votos exacto de cada una de las 5 categorías anteriores. Si el formulario contiene nombres abreviados o parciales, mapéalos de forma exacta a los nombres oficiales listados arriba en el arreglo 'votes'.
-    4. Busca anomalías visuales en las casillas de votos (números repintados, tachones, enmendaduras, etc.).
+    4. Busca anomalías visuales en las casillas de votos (números repintados, tachones graves, enmendaduras, alteración de cifras).
+       - REGLA DE SEGURIDAD CONTRA FALSOS POSITIVOS: NO reportes firmas de jurados, marcas de agua del formulario, dobleces físicos del papel, arrugas, sombras o manchas de suciedad en la digitalización como adulteraciones. Solo reporta un hallazgo de "TACHON" o "ENMENDADURA" si existe evidencia caligráfica clara de manipulación para adulterar un número. Si la marca es dudosa o no altera el valor del voto, asígnale "NONE" y omítela de la lista de fraudes.
     5. Si es un PDF multipágina, compara los ejemplares de Claveros, Delegados y Transmisión para hallar discrepancias.
     6. Responde SIEMPRE en JSON válido y asegúrate de que todos los partidos/candidatos en 'votes' coincidan exactamente con la lista de CANDIDATOS Y CATEGORÍAS.
 

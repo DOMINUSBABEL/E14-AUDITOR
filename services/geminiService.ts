@@ -18,12 +18,16 @@ export function runBusinessLogic(
   rivalParties: string[] = POLITICAL_CONFIG.RIVALS,
   autoDetect: boolean = true
 ): StrategicAnalysis {
-  if (!forensics || forensics.length === 0) return { intent: 'NEUTRO', impact_score: 0, recommendation: 'VALIDAR' };
+  // Filter out low confidence visual anomalies to prevent false positives (Confidence Threshold: >= 0.85)
+  const CONFIDENCE_THRESHOLD = 0.85;
+  const validForensics = (forensics || []).filter(f => (f.confidence ?? 1.0) >= CONFIDENCE_THRESHOLD);
+
+  if (validForensics.length === 0) return { intent: 'NEUTRO', impact_score: 0, recommendation: 'VALIDAR' };
 
   let totalImpact = 0;
   let detectedIntent: 'BENEFICIO' | 'PERJUICIO' | 'NEUTRO' = 'NEUTRO';
 
-  for (const f of forensics) {
+  for (const f of validForensics) {
     const delta = (f.final_value_legible || 0) - (f.original_value_inferred || 0);
 
     if (autoDetect) {
