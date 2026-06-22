@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
 import { POLITICAL_CONFIG, AI_CONFIG } from "./constants";
 import { ForensicDetail, VoteCount, StrategicAnalysis, AnalyzedAct } from "./types";
+import { runBusinessLogic } from "./services/geminiService";
 
 const getProvider = () => process.env.VITE_AI_PROVIDER || 'gemini';
 
@@ -32,61 +33,6 @@ interface AuditConfig {
   autoDetect: boolean;
 }
 
-export function runBusinessLogic(
-  forensics: ForensicDetail[] = [],
-  votes: VoteCount[],
-  clientParty: string = POLITICAL_CONFIG.CLIENT_NAME,
-  rivalParties: string[] = POLITICAL_CONFIG.RIVALS,
-  autoDetect: boolean = true
-): StrategicAnalysis {
-  if (!forensics || forensics.length === 0) return { intent: 'NEUTRO', impact_score: 0, recommendation: 'VALIDAR' };
-
-  let totalImpact = 0;
-  let detectedIntent: 'BENEFICIO' | 'PERJUICIO' | 'NEUTRO' = 'NEUTRO';
-
-  for (const f of forensics) {
-    const delta = (f.final_value_legible || 0) - (f.original_value_inferred || 0);
-
-    if (autoDetect) {
-       if (delta < 0) {
-           totalImpact -= Math.abs(delta);
-           detectedIntent = 'PERJUICIO';
-       } else if (delta > 0) {
-           totalImpact += delta;
-           if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO';
-       }
-    } else {
-        if (f.affected_party === clientParty) {
-          if (delta < 0) { totalImpact -= Math.abs(delta); detectedIntent = 'PERJUICIO'; }
-          else { totalImpact += delta; if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO'; }
-        } else if (rivalParties.includes(f.affected_party)) {
-          if (delta > 0) { totalImpact -= delta; detectedIntent = 'PERJUICIO'; }
-          else { totalImpact += Math.abs(delta); if (detectedIntent !== 'PERJUICIO') detectedIntent = 'BENEFICIO'; }
-        }
-    }
-  }
-
-  if (detectedIntent === 'PERJUICIO') {
-    return {
-      intent: 'PERJUICIO',
-      impact_score: totalImpact,
-      recommendation: 'IMPUGNAR',
-      legal_grounding: 'Alteración de resultados (Art. 192).'
-    };
-  }
-
-  if (detectedIntent === 'BENEFICIO') {
-    return {
-      intent: 'BENEFICIO',
-      impact_score: totalImpact,
-      recommendation: 'RECONTEO',
-      legal_grounding: 'Inconsistencia favorable detectada'
-    };
-  }
-
-  return { intent: 'NEUTRO', impact_score: 0, recommendation: 'VALIDAR' };
-}
-
 export const analyzeElectionAct = async (
   base64Image: string,
   mimeType: string,
@@ -101,16 +47,23 @@ export const analyzeElectionAct = async (
 
   const prompt = `
     # ROL: Experto Analista Forense Electoral (Registraduría Colombia)
-    # TAREA: Auditar Formulario E-14 (Actas de Escrutinio).
+    # TAREA: Auditar Formulario E-14 (Actas de Escrutinio de la Segunda Vuelta Presidencial de Colombia, 21 de junio de 2026).
     # OBJETIVO: Detectar tachones, enmendaduras y fraude aritmético.
 
+    CANDIDATOS Y CATEGORÍAS DE LA SEGUNDA VUELTA:
+    - Iván Cepeda Castro (Pacto Histórico)
+    - Abelardo de la Espriella (Defensores de la Patria)
+    - Voto en Blanco
+    - Votos Nulos
+    - Votos no Marcados
+
     INSTRUCCIONES:
-    1. Analiza el E-14 (Imagen o PDF multipágina).
+    1. Analiza el E-14 (Imagen o PDF multipágina de la segunda vuelta presidencial).
     2. Extrae Mesa, Zona, Municipio.
-    3. Extrae conteo de votos de cada partido.
-    4. Busca anomalías visuales en las casillas de votos.
-    5. Si es un PDF multipágina, compara Claveros con Delegados.
-    6. Responde SIEMPRE en JSON válido.
+    3. Extrae el conteo de votos exacto de cada una de las 5 categorías anteriores. Si el formulario contiene nombres abreviados o parciales, mapéalos de forma exacta a los nombres oficiales listados arriba en el arreglo 'votes'.
+    4. Busca anomalías visuales en las casillas de votos (números repintados, tachones, enmendaduras, etc.).
+    5. Si es un PDF multipágina, compara los ejemplares de Claveros, Delegados y Transmisión para hallar discrepancias.
+    6. Responde SIEMPRE en JSON válido y asegúrate de que todos los partidos/candidatos en 'votes' coincidan exactamente con la lista de CANDIDATOS Y CATEGORÍAS.
 
     JSON SCHEMA:
     {
@@ -121,7 +74,7 @@ export const analyzeElectionAct = async (
       "conclusion": "string",
       "mesa": "string",
       "zona": "string",
-      "votes": [{"party": "string", "count": number}],
+      "votes": [{"party": "Iván Cepeda Castro (Pacto Histórico)" | "Abelardo de la Espriella (Defensores de la Patria)" | "Voto en Blanco" | "Votos Nulos" | "Votos no Marcados", "count": number}],
       "total_calculated": number,
       "total_declared": number,
       "is_fraud": boolean,
@@ -254,16 +207,35 @@ const server = Bun.serve({
     if (url.pathname === "/api/analyze" && req.method === "POST") {
       try {
         const body = await req.json();
-        const { base64Image, mimeType, fileName, config } = body;
+        const { base64Image, mimeType, imageUrl, fileName, config } = body;
 
-        if (!base64Image || !mimeType) {
-          return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        let finalBase64 = base64Image;
+        let finalMime = mimeType;
+
+        if (imageUrl && !finalBase64) {
+          try {
+            console.log(`[Backend] Descargando y convirtiendo acta E-14 desde CDN: ${imageUrl}`);
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error(`Fallo de conexión CDN: ${response.statusText}`);
+            const buffer = await response.arrayBuffer();
+            finalBase64 = Buffer.from(buffer).toString('base64');
+            finalMime = response.headers.get('content-type') || 'image/jpeg';
+          } catch (fetchErr: any) {
+            return new Response(JSON.stringify({ error: `Error descargando imagen de Registraduría: ${fetchErr.message}` }), {
+              status: 422,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (!finalBase64 || !finalMime) {
+          return new Response(JSON.stringify({ error: "Faltan campos obligatorios (base64Image o imageUrl)" }), {
             status: 400,
             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
           });
         }
 
-        const result = await analyzeElectionAct(base64Image, mimeType, fileName, config);
+        const result = await analyzeElectionAct(finalBase64, finalMime, fileName || imageUrl, config);
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         });
