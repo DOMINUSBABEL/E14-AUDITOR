@@ -10,6 +10,9 @@ import { generateLegalTemplate } from './LegalUtils';
  * Generates an array of strings representing CSV content from an array of AnalyzedAct objects.
  */
 export function generateCSVChunks(dataToExport: AnalyzedAct[], columns: string[]): string[] {
+  if (typeof window !== 'undefined' && (window as any).__MOCK_GENERATE_CSV_CHUNKS__) {
+    return (window as any).__MOCK_GENERATE_CSV_CHUNKS__(dataToExport, columns);
+  }
   const columnHandlers = getColumnHandlers(columns);
   const headers = columns.join(',');
   const chunks: string[] = [headers, '\n'];

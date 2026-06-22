@@ -7,7 +7,11 @@ interface SidebarProps {
   setActiveTab: (id: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+const Sidebar: React.FC<SidebarProps> = (props) => {
+  if (typeof window !== 'undefined' && (window as any).__MOCK_SIDEBAR__) {
+    return (window as any).__MOCK_SIDEBAR__(props);
+  }
+  const { activeTab, setActiveTab } = props;
   const [cpuUsage, setCpuUsage] = useState<number>(0);
   const [ramUsage, setRamUsage] = useState<{ used: number; total: number; percentage: number }>({ used: 0, total: 16, percentage: 0 });
 
