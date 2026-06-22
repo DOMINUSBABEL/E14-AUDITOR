@@ -21,6 +21,21 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
   const [selectedActForLegal, setSelectedActForLegal] = useState<AnalyzedAct | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [registraduriaQueue, setRegistraduriaQueue] = useState<any[]>([]);
+  const [registraduriaMetadata, setRegistraduriaMetadata] = useState<string>('');
+
+  const handleQueueTables = (tables: any[], dept: string, mun: string, puesto: string, corp: string) => {
+    const year = corp === 'PRE' ? '2026' : '2023';
+    const queuedWithUrls = tables.map(t => ({
+      ...t,
+      u: t.u || `https://cdn-e14.registraduria.gov.co/${year}/${corp}/${t.id}.jpg`
+    }));
+    setRegistraduriaQueue(queuedWithUrls);
+    setRegistraduriaMetadata(`Corporación: ${corp}, Depto: ${dept}, Municipio: ${mun}, Puesto: ${puesto}`);
+    setError(null);
+    setResults([]);
+  };
+
   // Configuration State
   const [showConfig, setShowConfig] = useState(false);
   const [clientParty, setClientParty] = useState(POLITICAL_CONFIG.CLIENT_NAME);
@@ -136,7 +151,7 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
     setError(null);
     setResults([]);
     
-    let itemsToProcess: Array<{ source: string, getData: () => Promise<{base64: string, mimeType: string}> }> = [];
+    let itemsToProcess: Array<{ source: string, imageUrl?: string, getData?: () => Promise<{base64: string, mimeType: string}> }> = [];
 
     if (activeTab === 'upload' && files.length > 0) {
       itemsToProcess = files.map(file => ({
@@ -147,12 +162,17 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
       const urlList = urls.split('\n').filter(u => u.trim() !== '');
       itemsToProcess = urlList.map(url => ({
         source: url.trim(),
-        getData: () => getBase64FromUrl(url.trim())
+        imageUrl: url.trim()
+      }));
+    } else if (activeTab === 'registraduria' && registraduriaQueue.length > 0) {
+      itemsToProcess = registraduriaQueue.map(t => ({
+        source: `Mesa ${t.n}`,
+        imageUrl: t.u
       }));
     }
 
     if (itemsToProcess.length === 0) {
-      setError("No files or URLs provided.");
+      setError("No hay archivos, URLs ni mesas en cola para iniciar la auditoría.");
       setIsProcessing(false);
       return;
     }
@@ -167,13 +187,23 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
         const item = itemsToProcess[i];
         if (!item) break;
 
-        try {
-          const { base64, mimeType } = await item.getData();
-          const analysis = await analyzeElectionAct(base64, mimeType, item.source, {
-            clientParty,
-            rivalParties: Array.from(rivalParties),
-            autoDetect
-          });
+          let analysis;
+          if (item.getData) {
+            const { base64, mimeType } = await item.getData();
+            analysis = await analyzeElectionAct(base64, mimeType, item.source, {
+              clientParty,
+              rivalParties: Array.from(rivalParties),
+              autoDetect
+            });
+          } else if (item.imageUrl) {
+            analysis = await analyzeElectionAct(null, null, item.source, {
+              clientParty,
+              rivalParties: Array.from(rivalParties),
+              autoDetect
+            }, item.imageUrl);
+          } else {
+            throw new Error("Parámetro no reconocido");
+          }
           setResults(prev => [...prev, analysis]);
           finalResults[i] = analysis;
         } catch (err: unknown) {
@@ -341,7 +371,28 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
                 />
               </div>
             ) : (
-              <RegistraduriaScraper onImageFound={handleRegistraduriaImage} />
+              <div className="space-y-4">
+                <RegistraduriaScraper onImageFound={handleRegistraduriaImage} onQueueTables={handleQueueTables} />
+                {registraduriaQueue.length > 0 && (
+                  <div className="p-4 bg-primary-950/20 border border-primary-500/20 rounded-xl flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex justify-between items-center">
+                       <span className="text-xs font-bold text-primary-400 uppercase tracking-wider flex items-center gap-1">
+                         <Archive size={12} /> Cola de Registraduría Lista
+                       </span>
+                       <span className="bg-slate-800 text-[10px] text-slate-300 font-mono px-2 py-0.5 rounded border border-slate-700">{registraduriaQueue.length} mesas en cola</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-medium italic">{registraduriaMetadata}</p>
+                    <div className="max-h-24 overflow-y-auto space-y-1 mt-1 border border-slate-800/40 p-2 rounded bg-black/45">
+                       {registraduriaQueue.map((m, idx) => (
+                         <div key={idx} className="text-[10px] text-slate-500 font-mono flex justify-between">
+                            <span>Mesa {m.n}</span>
+                            <span className="text-[9px] text-slate-700 truncate max-w-[200px]">{m.u}</span>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -351,16 +402,28 @@ const ManualAudit: React.FC<ManualAuditProps> = ({ onComplete }) => {
               {isProcessing && (
                 <span className="flex items-center gap-2">
                   <Loader2 size={16} className="animate-spin text-primary-500" />
-                  Auditando: {results.length} / {(activeTab === 'upload' ? files.length : urls.split('\n').filter(u=>u.trim()!=='').length)}
+                  Auditando: {results.length} / {
+                    activeTab === 'upload' ? files.length :
+                    activeTab === 'urls' ? urls.split('\n').filter(u=>u.trim()!=='').length :
+                    registraduriaQueue.length
+                  }
                 </span>
               )}
             </div>
             <button
                 onClick={handleAnalyze}
-                disabled={isProcessing || (activeTab === 'upload' && files.length === 0) || (activeTab === 'urls' && urls.length === 0)}
+                disabled={
+                  isProcessing || 
+                  (activeTab === 'upload' && files.length === 0) || 
+                  (activeTab === 'urls' && urls.trim().length === 0) ||
+                  (activeTab === 'registraduria' && registraduriaQueue.length === 0)
+                }
                 className={`flex items-center space-x-2 px-8 py-3 rounded-lg font-bold text-white transition-all ${
-                    isProcessing || (activeTab === 'upload' && files.length === 0) || (activeTab === 'urls' && urls.length === 0)
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                    isProcessing || 
+                    (activeTab === 'upload' && files.length === 0) || 
+                    (activeTab === 'urls' && urls.trim().length === 0) ||
+                    (activeTab === 'registraduria' && registraduriaQueue.length === 0)
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50' 
                     : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20'
                 }`}
             >
