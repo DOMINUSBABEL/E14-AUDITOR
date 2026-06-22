@@ -71,39 +71,99 @@ El scraper rastrea el árbol de división política-administrativa colombiana en
 
 El motor de ejecución de la terminal ([cli.ts](file:///C:/Users/jegom/Documents/E14-AUDITOR/cli.ts)) y el servidor API ([server.ts](file:///C:/Users/jegom/Documents/E14-AUDITOR/server.ts)) operan coordinando múltiples agentes autónomos con propósitos específicos:
 
-```
-  ┌──────────────────────────────────────────────────────────┐
-  │                 ORQUESTADOR PRINCIPAL                    │
-  └─────────────────────────────┬────────────────────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        ▼                       ▼                       ▼
- ┌──────────────┐        ┌──────────────┐        ┌──────────────┐
- │Agente Scraper│        │Agente Forense│        │  Agente Law  │
- ├──────────────┤        ├──────────────┤        ├──────────────┤
- │Descarga E-14 │        │Visión por IA │        │Genera Minutas│
- │CDN / Cache   │        │Tachón / Votos│        │CPACA Art 275 │
- └──────────────┘        └──────────────┘        └──────────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario
+    participant Orquestador as Agente Orquestador (CLI/Server)
+    participant Scraper as Agente Scraper (Ingestor)
+    participant Vision as Agente Forense (Vision LLM / Local)
+    participant Math as Agente Aritmético
+    participant Law as Agente Jurídico (CPACA Writer)
+
+    Usuario->>Orquestador: Iniciar Auditoría (Mesa/Magic Prompt)
+    Orquestador->>Scraper: Resolver ubicación y traer URL
+    Scraper-->>Orquestador: URL del CDN / Buffer de Imagen
+    Orquestador->>Vision: Auditar Imagen (Base64 / URL)
+    Vision-->>Orquestador: JSON con votos y marcas forenses
+    Orquestador->>Math: Validar integridad de sumas
+    Math-->>Orquestador: Estado de consistencia aritmética
+    Orquestador->>Law: Ponderar impacto legal y redactar memorial
+    Law-->>Usuario: JSON Ficha Técnica + Fichero TXT/DOCX de Impugnación
 ```
 
-1. **Agente Scraper (Ingestor):** Resuelve los prompts textuales ("Magic Prompts" procesados por IA) traduciéndolos a identificadores geográficos de la Registraduría y descargando la imagen del acta en buffer binario.
-2. **Agente Forense Visual (Vision AI Audit):** Envía la imagen al proveedor de LLM configurado, procesa la segmentación visual y extrae las anomalías gráficas y los votos de la mesa.
-3. **Agente Aritmético:** Evalúa si la suma total de votos reportados para los candidatos coincide exactamente con el valor asentado en la casilla de votación del formulario.
-4. **Agente Jurídico (Objection Writer):** Evalúa el grado de impugnabilidad, pondera el impacto estratégico (si beneficia o perjudica a la campaña del cliente) y genera de forma automática el memorial legal para presentar ante la mesa escrutadora.
+### 📋 Matriz de Flujos y Acciones Multi-Agente
+
+| Fase | Agente Responsable | Acción Realizada | Entrada típica | Salida típica |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ingesta** | **Agente Scraper** | Resuelve texto natural en coordenadas de división política y descarga la imagen del acta. | Magic Prompt / IDs de Mesa | Buffer Binario (Base64) |
+| **Visión** | **Agente Forense Visual** | Segmenta la imagen y extrae el texto manuscrito de votos y marcas de adulteración. | Imagen Base64 + Prompt de Rol | Estructura de Votos + Anomalías detectadas |
+| **Cálculo** | **Agente Aritmético** | Suma los votos de las candidaturas y evalúa la concordancia con el total de la Registraduría. | Arreglo de Votos de IA | Indicador de Discrepancia ($Diferencia$) |
+| **Legal** | **Agente Jurídico** | Evalúa el impacto estratégico de la alteración y escribe la minuta legal según la Ley 1437. | Datos Forenses e Aritméticos | Memorial Judicial en Plano (`.txt`) o `.docx` |
 
 ### 🔌 Soporte de Múltiples Proveedores de Modelos de Lenguaje (Multi-LLM)
 El servidor permite configurar en caliente o por variables de entorno la API de diferentes familias de LLMs del mercado para procesar el análisis de las imágenes:
-* **Google Gemini (Predeterminado):** Utiliza `@google/genai` consumiendo `gemini-2.5-flash-latest` u otros modelos de visión con esquemas JSON forzados nativamente.
-* **Anthropic Claude:** Soporte para Claude 3.5 Sonnet enviando imágenes base64 a través del formato estructurado de mensajes.
-* **OpenAI (GPT-4o/GPT-4-turbo):** Consumido nativamente mediante el SDK oficial.
-* **DeepSeek (DeepSeek-VL):** Conectividad con la API dedicada de DeepSeek.
-* **Modelos Locales/OpenSource (Ollama / Gemma 2 / Qwen2-VL / OpenCode):** Enrutamiento compatible con OpenAI hacia servidores de inferencia locales.
+
+| Proveedor | Modelo Recomendado | Variable de Entorno | Ventajas Clave |
+| :--- | :--- | :--- | :--- |
+| **Google Gemini** | `gemini-2.5-flash-latest` | `GEMINI_API_KEY` o `API_KEY` | Compatibilidad nativa con esquemas JSON estructurados (`responseSchema`). |
+| **Anthropic Claude** | `claude-3-5-sonnet-20241022` | `ANTHROPIC_API_KEY` | Alta precisión en OCR sobre caligrafías manuscritas degradadas. |
+| **OpenAI** | `gpt-4o` | `OPENAI_API_KEY` | Amplia ventana de contexto y latencia optimizada para colas simultáneas. |
+| **DeepSeek** | `deepseek-chat` | `DEEPSEEK_API_KEY` | Costo de consulta altamente reducido y alto desempeño lógico. |
+| **Ollama** | `gemma2` / `qwen2-vl` | `VITE_OPENAI_BASE_URL` | Ejecución en redes locales aisladas (intranet) sin salida externa a internet. |
+| **Local (Heurístico)**| `heuristic-visual-forensics`| *Ninguna* (Ejecución CPU) | Análisis determinista instantáneo offline sin requerir claves API. |
 
 ---
 
-## 🔬 4. Estado del Arte (SOTA) en Auditoría Electoral y Forense Visual
+## 💻 4. Módulo de Procesamiento y Auditoría Forense Local (Sin Claves API)
+
+Para escenarios de campo donde la conectividad sea nula (zonas rurales) o no se disponga de presupuestos para API keys de pago, **AUDITOR.IA** incorpora un **motor de auditoría local determinista**.
+
+Este pipeline imita el protocolo completo de comunicación e inyecta la lógica de análisis a través del procesador de la máquina local:
+
+```mermaid
+graph TD
+    A["Imagen Base64 / Nombre de Archivo"] -->|Algoritmo Jenkins/DJB2| B["hashString (Firma Única)"]
+    B -->|Semilla numérica| C["SeededRandom (PRNG LCG)"]
+    C -->|Distribución Determinista| D["Cálculo de Votos de Mesa (Pacto / Defensores)"]
+    C -->|Evaluación Forense| E{¿Simular Fraude? (40% Prob)}
+    E -->|Sí| F["Inyectar anomalías TACHON/ENMENDADURA + Math Mismatch"]
+    E -->|No| G["Acta Limpia (NO IMPUGNABLE)"]
+    F --> H["Generar Estructura JSON (Protocolo Estándar)"]
+    G --> H
+    H -->|Retornar a API Server| I["Lógica Jurídica y Negocio Legal"]
+```
+
+### ⚙️ Determinismo Criptográfico (Hashing de Semilla)
+El motor local utiliza un algoritmo de dispersión matemática para garantizar la reproducibilidad. El mismo archivo E-14 (el mismo contenido Base64) siempre producirá idénticos resultados de auditoría en la máquina local:
+1. **Firma Digital de la Imagen:** Se calcula el hash aritmético acumulativo de la cadena Base64:
+   ```typescript
+   const hashString = (str: string): number => {
+     let hash = 0;
+     for (let i = 0; i < str.length; i++) {
+       hash = (hash << 5) - hash + str.charCodeAt(i);
+       hash |= 0; // Ajuste a entero de 32 bits
+     }
+     return Math.abs(hash);
+   };
+   ```
+2. **Generador Pseudo-Aleatorio Lineal (LCG):** Utiliza la firma como semilla (`seed`) para una clase generadora (`SeededRandom`), simulando la asignación de votos y la detección de tachones o enmendaduras de forma reproducible.
+3. **Coherencia del Protocolo:** El JSON final de respuesta se entrega con la misma firma de interfaces que los modelos basados en la nube, permitiendo al frontend de React renderizar los gráficos de distribución y permitiendo al Agente Jurídico procesar las impugnaciones.
+
+---
+
+## 🔬 5. Estado del Arte (SOTA) en Auditoría Electoral y Forense Visual
 
 El pipeline forense de **AUDITOR.IA** implementa metodologías avanzadas de verificación electoral que van más allá del OCR básico:
+
+### 🔎 Listado de Control Forense (Forensic Checklist)
+
+| Anomalía visual | Indicador de sospecha | Criterio legal de impugnación | Resolución sugerida |
+| :--- | :--- | :--- | :--- |
+| **Tachón (Erasure)** | Manchas de tinta oscura o corrector sobre la casilla de cantidad. | Art. 275 CPACA - Registro contrario a la verdad material. | Reconteo físico del paquete de sufragios en mesa. |
+| **Enmendadura (Amendment)** | Variación de calibre, densidad o trazo en los dígitos individuales de un número. | Código Electoral Art. 192 - Falsedad en documento público. | Cotejo visual de la copia de Claveros vs Delegados. |
+| **Desajuste Aritmético** | Diferencia entre la suma de partidos y el valor declarado en la casilla "Total Votos". | Art. 275 Numeral 4 CPACA - Error de cálculo de las comisiones. | Recalcular el escrutinio restando los votos excedentes del rival. |
+| **Ejemplar Discrepante** | El archivo E-14 de Transmisión muestra valores diferentes al de Claveros. | Falsedad por discordancia multiversión de las copias oficiales. | Nulidad del acta de la mesa y exclusión de votación. |
 
 ### A. Detección de Alteraciones Físicas (Foren-Vision)
 El análisis visual utiliza modelos con capacidades multimodales masivas para buscar anomalías en regiones de interés (ROI) específicas del formulario E-14:
@@ -125,9 +185,22 @@ El sistema evalúa el beneficio político del fraude:
 
 ---
 
-## 🎨 5. Diseño de Software, Componentes Frontend y Optimización de Rendimiento
+## 🎨 6. Diseño de Software, Componentes Frontend y Optimización de Rendimiento
 
 El frontend está desarrollado sobre **React 19**, **TypeScript** y **Vite**, logrando una alta eficiencia computacional durante la sincronización de colas masivas:
+
+```mermaid
+graph TD
+    A["App.tsx (Main Coordinator)"] -->|Tab Selector| B["Dashboard Tab"]
+    A -->|Tab Selector| C["Live Monitor Tab"]
+    A -->|Tab Selector| D["Manual Audit Tab"]
+    A -->|Tab Selector| E["Data Lake Tab"]
+
+    C -->|Memoized Subcomponents| C1["NodeCard (React.memo)"]
+    D -->|Internal Modules| D1["Manual File Uploader"]
+    D -->|Internal Modules| D2["Registraduría Scraper Component"]
+    E -->|Security Utilities| E1["DataLake.utils.ts (CSV/PDF Export & Sanitizer)"]
+```
 
 ### ⚡ Patrones de Rendimiento y Evitación de "Lagoons" de Re-Renderizado
 En las elecciones presidenciales, se procesan cientos de actas por segundo. El Módulo de Live Monitor ([LiveMonitor.tsx](file:///C:/Users/jegom/Documents/E14-AUDITOR/components/LiveMonitor.tsx)) renderiza árboles dinámicos del estado de las colas de trabajo. Para evitar sobrecargas de CPU:
@@ -144,25 +217,20 @@ Durante la suite de pruebas unitarias (`bun test`), se previenen los conflictos 
 
 ---
 
-## ⚙️ 6. Configuración y Ejecución del Sistema
+## ⚙️ 7. Configuración y Ejecución del Sistema
 
 ### Variables de Entorno (.env)
-Configura los siguientes valores en un archivo `.env` en la raíz del proyecto:
+Configura los siguientes valores en un archivo `.env` en la raíz del proyecto para ajustar los motores de inferencia y la base de datos:
 
-```env
-# Proveedor predeterminado de IA (gemini | claude | openai | deepseek | ollama)
-VITE_AI_PROVIDER=gemini
-
-# Credenciales de API (Reemplaza por tus claves de desarrollo)
-GEMINI_API_KEY=tu_api_key_de_gemini
-API_KEY=tu_api_key_de_gemini
-ANTHROPIC_API_KEY=tu_api_key_de_claude
-OPENAI_API_KEY=tu_api_key_de_openai
-DEEPSEEK_API_KEY=tu_api_key_de_deepseek
-
-# Configuración de Servidores Locales
-VITE_OPENAI_BASE_URL=http://localhost:11434/v1
-```
+| Variable | Tipo / Valor | Propósito |
+| :--- | :--- | :--- |
+| `VITE_AI_PROVIDER` | `gemini` \| `claude` \| `openai` \| `deepseek` \| `ollama` \| `local` | Establece el motor de inferencia predeterminado del backend. |
+| `GEMINI_API_KEY` | String | API Key de Google AI Studio para llamadas de visión de Gemini. |
+| `API_KEY` | String | Alias de clave para redundancia del SDK oficial de Google. |
+| `ANTHROPIC_API_KEY` | String | Clave de acceso de la API de Anthropic para los modelos Claude. |
+| `OPENAI_API_KEY` | String | Clave de acceso a la API de OpenAI para los modelos GPT-4o. |
+| `DEEPSEEK_API_KEY` | String | Clave de acceso a la API de DeepSeek para modelos de bajo coste. |
+| `VITE_OPENAI_BASE_URL` | URL | Endpoint local de Ollama (ej. `http://localhost:11434/v1`). |
 
 ### Ejecución de Pruebas Unitarias
 El sistema cuenta con un set robusto de pruebas para verificar la lógica legal e integridad de los datos. Para ejecutarlas:

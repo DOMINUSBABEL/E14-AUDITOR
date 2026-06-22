@@ -69,6 +69,7 @@ const ManualAudit: React.FC<ManualAuditProps> = (props) => {
     else if (newProvider === 'openai') defaultModel = 'gpt-4o';
     else if (newProvider === 'deepseek') defaultModel = 'deepseek-chat';
     else if (newProvider === 'ollama') defaultModel = 'gemma2';
+    else if (newProvider === 'local') defaultModel = 'heuristic-visual-forensics';
     setModel(defaultModel);
     localStorage.setItem('audit_model', defaultModel);
   };
@@ -375,6 +376,7 @@ const ManualAudit: React.FC<ManualAuditProps> = (props) => {
                             <option value="openai">OpenAI</option>
                             <option value="deepseek">DeepSeek</option>
                             <option value="ollama">Ollama (Gemma / Local)</option>
+                            <option value="local">Procesamiento Local (Sin API Key)</option>
                         </select>
                     </div>
 
@@ -388,7 +390,8 @@ const ManualAudit: React.FC<ManualAuditProps> = (props) => {
                                 provider === 'gemini' ? 'gemini-2.5-flash-latest' :
                                 provider === 'claude' ? 'claude-3-5-sonnet-20241022' :
                                 provider === 'openai' ? 'gpt-4o' :
-                                provider === 'deepseek' ? 'deepseek-chat' : 'gemma2'
+                                provider === 'deepseek' ? 'deepseek-chat' :
+                                provider === 'local' ? 'heuristic-visual-forensics' : 'gemma2'
                             }
                             className="w-full bg-slate-950 border border-slate-800 text-white text-sm rounded-lg p-2.5 focus:border-primary-500 focus:outline-none font-mono"
                         />
