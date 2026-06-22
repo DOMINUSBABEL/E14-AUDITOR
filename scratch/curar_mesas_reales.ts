@@ -233,10 +233,10 @@ async function run() {
     const ai = new GoogleGenAI({ apiKey });
     const analysisResults: any[] = [];
 
-    // Loop over the first 5 tables (Mesa 1 to Mesa 5)
-    for (let mesaNum = 1; mesaNum <= 5; mesaNum++) {
+    // Loop over the remaining 25 tables (Mesa 6 to Mesa 30)
+    for (let mesaNum = 6; mesaNum <= 30; mesaNum++) {
       console.log(`\n======================================================`);
-      console.log(`Processing Mesa ${mesaNum} / 5...`);
+      console.log(`Processing Mesa ${mesaNum} / 30...`);
 
       // Click table card
       console.log(`Clicking Mesa ${mesaNum} card...`);
