@@ -25,4 +25,4 @@ dist-ssr
 *.sw?
 
 # CLI Output Directory
-output/
+output*/
