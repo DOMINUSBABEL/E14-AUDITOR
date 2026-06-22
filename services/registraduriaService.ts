@@ -83,6 +83,9 @@ export const getZones = async (corpId: string, deptId: string, munId: string): P
   if (data) return data.map((z: any) => ({ id: z.id, n: z.n }));
   
   // Fallback offline enriquecido
+  if (deptId === '07' && munId === '036') {
+    return [{ id: '99', n: 'ZONA UNICA' }];
+  }
   return [{ id: '01', n: 'ZONA URBANIZADA 01' }, { id: '02', n: 'ZONA URBANIZADA 02' }];
 };
 
@@ -91,6 +94,9 @@ export const getPollingStations = async (corpId: string, deptId: string, munId: 
   if (data) return data.map((p: any) => ({ id: p.id, n: p.n }));
   
   // Fallback offline enriquecido
+  if (deptId === '07' && munId === '036') {
+    return [{ id: '01', n: 'CABECERA MUNICIPAL' }];
+  }
   if (zoneId === '01') {
     return [{ id: '01', n: 'COLEGIO COOPERATIVO' }, { id: '02', n: 'UNIVERSIDAD REGIONAL' }];
   } else {
@@ -102,12 +108,20 @@ export const getTables = async (corpId: string, deptId: string, munId: string, z
   const data = await fetchApi(`/resultados/${corpId}/${deptId}/${munId}/${zoneId}/${puestoId}/mesas.json`);
   if (data) return data.map((m: any) => ({ id: m.id, n: m.n, u: m.u }));
   
-  // Fallback offline enriquecido (mesas simuladas con URLs de fallback)
+  // Fallback offline enriquecido (mesas simuladas con URLs de fallback reales)
   const year = corpId === 'PRE' ? '2026' : '2023';
+  if (deptId === '07' && munId === '036') {
+    return [
+      { id: '070039901001', n: '1', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/070039901001.jpg` },
+      { id: '070039901002', n: '2', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/070039901002.jpg` },
+      { id: '070039901003', n: '3', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/070039901003.jpg` },
+      { id: '070039901004', n: '4', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/070039901004.jpg` }
+    ];
+  }
   return [
-    { id: `${deptId}${munId}${zoneId}${puestoId}001`, n: '1', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${deptId}${munId}${zoneId}${puestoId}001.jpg` },
-    { id: `${deptId}${munId}${zoneId}${puestoId}002`, n: '2', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${deptId}${munId}${zoneId}${puestoId}002.jpg` },
-    { id: `${deptId}${munId}${zoneId}${puestoId}003`, n: '3', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${deptId}${munId}${zoneId}${puestoId}003.jpg` }
+    { id: `${deptId}${munId}${zoneId}${puestoId}001`, n: '1', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${deptId}${munId}/${zoneId}/${puestoId}001.jpg` },
+    { id: `${deptId}${munId}${zoneId}${puestoId}002`, n: '2', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${deptId}${munId}/${zoneId}/${puestoId}002.jpg` },
+    { id: `${deptId}${munId}${zoneId}${puestoId}003`, n: '3', u: `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${deptId}${munId}/${zoneId}/${puestoId}003.jpg` }
   ];
 };
 

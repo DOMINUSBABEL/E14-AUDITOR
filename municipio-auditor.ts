@@ -429,7 +429,21 @@ ${results.filter(r => r.estado === "IMPUGNABLE").length === 0
 ${results.filter(r => r.estado === "IMPUGNABLE").map(r => `| ${r.zona} | ${r.puesto} | Mesa ${r.mesa} | ${r.conclusion} |`).join("\n")}
 `}
 
-## 📂 4. Estructura de la Auditoría
+## 🔗 4. Enlaces de Actas de Escrutinio E-14 (Registraduría Nacional)
+| Zona | Puesto | Mesa | Estado | Enlace al Acta en el CDN Oficial |
+| :--- | :--- | :--- | :--- | :--- |
+${results.map((r, i) => {
+  const { zone, puesto, mesa } = tableQueue[i];
+  let imageUrl = mesa.u;
+  if (!imageUrl) {
+    const year = corpId === "PRE" ? "2026" : "2023";
+    const fallbackId = `${dept.id}${mun.id}${zone.id}${puesto.id}${mesa.n}`;
+    imageUrl = `https://cdn-e14.registraduria.gov.co/${year}/${corpId}/${fallbackId}.jpg`;
+  }
+  return `| ${r.zona} | ${r.puesto} | Mesa ${r.mesa} | \`${r.estado}\` | [Ver Formulario E-14](${imageUrl}) |`;
+}).join("\n")}
+
+## 📂 5. Estructura de la Auditoría
 El resultado completo y los soportes digitalizados de las actas de escrutinio E-14 (en formato original e imágenes convertidas a PDF de alta resolución) se encuentran estructurados localmente bajo la siguiente jerarquía:
 - [reporte_consolidado.json](file:///${absoluteJsonPath})
 - [reporte_consolidado.xlsx](file:///${absoluteXlsxPath})
