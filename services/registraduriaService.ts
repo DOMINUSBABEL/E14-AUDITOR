@@ -38,6 +38,7 @@ const fetchApi = async (path: string) => {
 
 export const getCorporations = async (): Promise<RegistraduriaCorporation[]> => {
   return [
+    { id: 'PRE', n: 'Presidente' },
     { id: 'ALC', n: 'Alcalde' },
     { id: 'GOB', n: 'Gobernador' },
     { id: 'CON', n: 'Concejo' },
